@@ -2,6 +2,11 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TibiaHub", "TibiaHub\TibiaHub.csproj", "{F5F9EBF2-99D5-4957-B866-A25489C732B0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7A29A985-C57E-4AB4-9147-82C60C5532D2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\ROADMAP.MD = docs\ROADMAP.MD
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
