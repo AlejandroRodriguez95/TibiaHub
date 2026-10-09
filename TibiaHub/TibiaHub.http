@@ -1,0 +1,4 @@
+@TibiaHub_HostAddress = http://localhost:5267
+
+GET {{TibiaHub_HostAddress}}/character/Lazy+Snorlax
+Accept: application/json
