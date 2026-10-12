@@ -73,5 +73,36 @@ Current backend project can be run with:
 dotnet run --project TibiaHub/TibiaHub.csproj
 ```
 
-Docker, PostgreSQL, the Angular client, authentication, and the final project structure will be added in later milestones.
+### Local PostgreSQL
 
+PostgreSQL is configured through Docker Compose for local development.
+
+Start Docker Desktop, then run:
+
+```powershell
+docker compose up -d
+```
+
+Check the database container:
+
+```powershell
+docker compose ps
+```
+
+Stop the database:
+
+```powershell
+docker compose down
+```
+
+The default local database settings are:
+
+```text
+Host=localhost
+Port=5433
+Database=tibiahub
+Username=tibiahub
+Password=tibiahub_dev_password
+```
+
+Authentication, EF Core wiring, and the final project structure will be added in later milestones.
