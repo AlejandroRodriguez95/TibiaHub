@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using TibiaHub.External.TibiaData;
+using TibiaHub.Routes;
 
 namespace TibiaHub.Controllers;
 
 [ApiController]
-[Route("character")]
+[Route(ApiRoutes.Character)]
 public sealed class CharacterController(TibiaDataClient tibiaDataClient) : ControllerBase
 {
-    [HttpGet("{name}")]
+    [HttpGet(ApiRoutes.CharacterRoutes.ByName)]
     public async Task<IResult> GetCharacter(
         string name,
         CancellationToken cancellationToken)
