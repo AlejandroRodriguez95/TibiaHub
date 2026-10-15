@@ -75,3 +75,20 @@ dotnet run --project TibiaHub/TibiaHub.csproj
 
 Docker, PostgreSQL, the Angular client, authentication, and the final project structure will be added in later milestones.
 
+## Backend Tests
+
+Start Docker Desktop (using Linux containers), then run:
+
+```powershell
+dotnet test TibiaHub.sln
+```
+
+The registration integration tests use xUnit, `WebApplicationFactory`, and Testcontainers.
+They start a temporary PostgreSQL 17 container, apply the application's migrations,
+and remove the container when the suite finishes. No development database or `.env`
+configuration is needed. The first run requires internet access to restore NuGet
+packages and download the container images.
+
+Coverage includes successful registration and password hashing, duplicate emails
+(including different casing), request validation, and Identity password rules.
+
