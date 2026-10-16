@@ -8,6 +8,7 @@ public static class ApiRoutes
     public static class AccountRoutes
     {
         public const string Register = "register";
+        public const string Login = "login";
         public const string UserById = "users/{id}";
 
         public static string UserLocation(string id) => $"/{Account}/users/{id}";

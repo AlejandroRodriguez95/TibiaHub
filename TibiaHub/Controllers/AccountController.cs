@@ -8,8 +8,28 @@ namespace TibiaHub.Controllers;
 
 [ApiController]
 [Route(ApiRoutes.Account)]
-public sealed class AccountController(UserManager<ApplicationUser> userManager) : ControllerBase
+public sealed class AccountController(
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager) : ControllerBase
 {
+    [HttpPost(ApiRoutes.AccountRoutes.Login)]
+    public async Task<IResult> Login(LoginRequest request)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+
+        if (user is null)
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await signInManager.PasswordSignInAsync(
+            user, request.Password, isPersistent: false, lockoutOnFailure: true);
+
+        return result.Succeeded
+            ? Results.Ok(new { user.Id, user.Email })
+            : Results.Unauthorized();
+    }
+
     [HttpPost(ApiRoutes.AccountRoutes.Register)]
     public async Task<IResult> Register(
         RegisterRequest request,
@@ -49,4 +69,11 @@ public sealed record RegisterRequest(
     string Email,
     [Required]
     [MinLength(6)]
+    string Password);
+
+public sealed record LoginRequest(
+    [Required]
+    [EmailAddress]
+    string Email,
+    [Required]
     string Password);

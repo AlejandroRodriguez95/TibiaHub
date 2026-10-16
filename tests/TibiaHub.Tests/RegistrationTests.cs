@@ -105,6 +105,61 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
         await AssertUserCountAsync(0);
     }
 
+    [Fact]
+    public async Task Valid_login_returns_user_and_authentication_cookie()
+    {
+        using var client = fixture.CreateClient();
+        using var registration = await client.PostAsJsonAsync("/account/register", new
+        {
+            Email = "player@example.com", Password = ValidPassword
+        });
+        Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+
+        using var response = await client.PostAsJsonAsync("/account/login", new
+        {
+            Email = "PLAYER@example.com", Password = ValidPassword
+        });
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("player@example.com", body.GetProperty("email").GetString());
+        Assert.False(string.IsNullOrWhiteSpace(body.GetProperty("id").GetString()));
+        Assert.False(body.TryGetProperty("passwordHash", out _));
+        Assert.Contains(response.Headers.GetValues("Set-Cookie"),
+            cookie => cookie.StartsWith(".AspNetCore.Identity.Application="));
+    }
+
+    [Theory]
+    [InlineData("player@example.com", "WrongPassword123!")]
+    [InlineData("unknown@example.com", ValidPassword)]
+    public async Task Invalid_credentials_return_unauthorized_without_cookie(string email, string password)
+    {
+        using var client = fixture.CreateClient();
+        using var registration = await client.PostAsJsonAsync("/account/register", new
+        {
+            Email = "player@example.com", Password = ValidPassword
+        });
+        Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+
+        using var response = await client.PostAsJsonAsync("/account/login", new { Email = email, Password = password });
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+    }
+
+    [Theory]
+    [InlineData(null, ValidPassword)]
+    [InlineData("not-an-email", ValidPassword)]
+    [InlineData("player@example.com", "")]
+    public async Task Invalid_login_request_returns_bad_request(string? email, string password)
+    {
+        using var client = fixture.CreateClient();
+        using var response = await client.PostAsJsonAsync("/account/login", new { Email = email, Password = password });
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        Assert.False(response.Headers.Contains("Set-Cookie"));
+    }
+
     private async Task AssertUserCountAsync(int expected)
     {
         using var scope = fixture.Services.CreateScope();
