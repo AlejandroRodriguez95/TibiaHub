@@ -566,3 +566,23 @@ Run the app:
 ```powershell
 dotnet run --project TibiaHub
 ```
+
+## Current Cookie And CSRF Configuration
+
+The Angular frontend uses Identity cookies. `AddControllersWithViews()` supplies
+MVC's antiforgery validation filter services, used by
+`[AutoValidateAntiforgeryToken]` on `AccountController`; this does not require
+adding HTML views. `AddAntiforgery` configures the `X-CSRF-TOKEN` request header.
+`GET /account/csrf` returns a token and sets its companion antiforgery cookie.
+The filter validates POST requests before executing the account action.
+
+`ConfigureApplicationCookie` sets HttpOnly, SameSite=Lax, and secure transport
+outside Development, and returns API status codes instead of login redirects.
+Development CORS allows credentials only from the explicit Angular origin.
+Angular must also send `withCredentials: true` to receive and send cookies.
+
+`[Authorize]` on `/account/me` and `/account/logout` requires an authenticated
+identity. `/me` resolves that identity with `UserManager.GetUserAsync(User)`;
+logout calls `SignInManager.SignOutAsync()` to clear the browser cookie.
+
+See [AUTHENTICATION.md](AUTHENTICATION.md) for the full flow and deployment notes.

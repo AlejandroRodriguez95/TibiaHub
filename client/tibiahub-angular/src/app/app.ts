@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { Account } from './account';
 
 interface TibiaDataCharacterResponse {
   character?: {
@@ -23,7 +24,7 @@ interface CharacterDetails {
 }
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, Account],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',

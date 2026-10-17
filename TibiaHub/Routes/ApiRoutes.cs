@@ -9,6 +9,9 @@ public static class ApiRoutes
     {
         public const string Register = "register";
         public const string Login = "login";
+        public const string MyAccount = "myaccount";
+        public const string Logout = "logout";
+        public const string Csrf = "csrf";
         public const string UserById = "users/{id}";
 
         public static string UserLocation(string id) => $"/{Account}/users/{id}";

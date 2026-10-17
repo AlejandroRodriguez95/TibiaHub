@@ -57,3 +57,17 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Account authentication
+
+The account panel supports registration, login, session restoration, and logout.
+Start the API with `dotnet run --project TibiaHub --launch-profile http` from the
+repository root. Account requests use `http://localhost:5267/account` with
+`withCredentials: true`; use `http://localhost:4200` for the Angular origin.
+The browser manages the HttpOnly Identity cookie. Before each account write,
+the panel requests a fresh antiforgery token and sends it in `X-CSRF-TOKEN`.
+No authentication credentials are stored in localStorage.
+
+See [authentication documentation](../../docs/AUTHENTICATION.md) for the endpoint
+contract, local development settings, and deployment requirements. API URLs
+currently target local development and must be configured for production hosting.

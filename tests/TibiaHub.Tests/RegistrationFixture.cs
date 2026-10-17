@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Hosting;
+using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +12,23 @@ namespace TibiaHub.Tests;
 
 public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsyncLifetime
 {
+    public async Task<HttpClient> CreateAccountClientAsync()
+    {
+        var client = CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false
+        });
+        await RefreshCsrfAsync(client);
+        return client;
+    }
+
+    public static async Task RefreshCsrfAsync(HttpClient client)
+    {
+        var body = await client.GetFromJsonAsync<JsonElement>("/account/csrf");
+        client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", body.GetProperty("token").GetString());
+    }
+
     private readonly PostgreSqlContainer database = new PostgreSqlBuilder("postgres:17")
         .Build();
 

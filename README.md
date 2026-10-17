@@ -11,7 +11,7 @@ The goal is to build a web application with reusable API functionality that can 
 - PostgreSQL for persistence.
 - Docker for local database setup.
 - ASP.NET Core Identity for user management.
-- JWT for API authentication.
+- ASP.NET Core Identity cookies for Angular authentication.
 
 ## Architecture Direction
 
@@ -53,27 +53,36 @@ Character data will come from an external Tibia API selected later. The Angular 
 
 ## Current Status
 
-This project is in the early planning/setup phase.
+The API supports public TibiaData character lookup and Identity account registration,
+login, current-user lookup, and logout. Angular provides character lookup and account
+forms with cookie sessions and CSRF protection.
 
-Current repository contents:
-
-- Minimal ASP.NET Core project.
-- Roadmap document.
-- Initial Git setup.
-
-See [docs/ROADMAP.MD](docs/ROADMAP.MD) for the current roadmap and open decisions.
+See [the roadmap](docs/ROADMAP.MD), [current next steps](docs/TODO.md), and
+[authentication details](docs/AUTHENTICATION.md).
 
 ## Running Locally
 
-The local development setup is not finalized yet.
-
-Current backend project can be run with:
+Start Docker Desktop with Linux containers, then run:
 
 ```powershell
-dotnet run --project TibiaHub/TibiaHub.csproj
+docker compose up -d
+dotnet tool restore
+dotnet ef database update --project TibiaHub
+dotnet run --project TibiaHub --launch-profile http
 ```
 
-Docker, PostgreSQL, the Angular client, authentication, and the final project structure will be added in later milestones.
+In another terminal:
+
+```powershell
+cd client/tibiahub-angular
+npm install
+npm start
+```
+
+Open `http://localhost:4200`; the API runs on `http://localhost:5267`.
+Use Node.js 22.22.3+, 24.15.0+, or another version supported by Angular 22.
+Configure `ConnectionStrings:DefaultConnection` for your local PostgreSQL instance;
+keep real credentials outside source control.
 
 ## Backend Tests
 
@@ -91,4 +100,7 @@ packages and download the container images.
 
 Coverage includes successful registration and password hashing, duplicate emails
 (including different casing), request validation, and Identity password rules.
+
+
+Authentication coverage also verifies current-user lookup, isolated cookie sessions, logout, and CSRF rejection.
 

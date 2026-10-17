@@ -19,7 +19,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [Fact]
     public async Task Valid_registration_returns_created_and_stores_hashed_password()
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var response = await client.PostAsJsonAsync("/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
@@ -50,7 +50,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [InlineData("PLAYER@EXAMPLE.COM")]
     public async Task Duplicate_email_returns_bad_request_without_creating_another_user(string email)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var first = await client.PostAsJsonAsync("/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
@@ -75,7 +75,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [InlineData("player@example.com", "Aa1!")]
     public async Task Invalid_request_returns_validation_errors_without_creating_user(string? email, string? password)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var response = await client.PostAsJsonAsync("/account/register", new { Email = email, Password = password });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -92,7 +92,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [InlineData("Password123", "PasswordRequiresNonAlphanumeric")]
     public async Task Weak_password_returns_identity_error_without_creating_user(string password, string expectedCode)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var response = await client.PostAsJsonAsync("/account/register", new
         {
             Email = "player@example.com", Password = password
@@ -108,7 +108,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [Fact]
     public async Task Valid_login_returns_user_and_authentication_cookie()
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var registration = await client.PostAsJsonAsync("/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
@@ -134,7 +134,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [InlineData("unknown@example.com", ValidPassword)]
     public async Task Invalid_credentials_return_unauthorized_without_cookie(string email, string password)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var registration = await client.PostAsJsonAsync("/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
@@ -153,7 +153,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     [InlineData("player@example.com", "")]
     public async Task Invalid_login_request_returns_bad_request(string? email, string password)
     {
-        using var client = fixture.CreateClient();
+        using var client = await fixture.CreateAccountClientAsync();
         using var response = await client.PostAsJsonAsync("/account/login", new { Email = email, Password = password });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -164,5 +164,65 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     {
         using var scope = fixture.Services.CreateScope();
         Assert.Equal(expected, await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Users.CountAsync());
+    }
+
+    [Fact]
+    public async Task Cookie_identifies_user_until_logout()
+    {
+        using var client = await fixture.CreateAccountClientAsync();
+        using var anonymous = await client.GetAsync("/account/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Null(anonymous.Headers.Location);
+        var credentials = new { Email = "session@example.com", Password = ValidPassword };
+        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+        using var afterRegistration = await client.GetAsync("/account/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, afterRegistration.StatusCode);
+        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var expected = await login.Content.ReadFromJsonAsync<JsonElement>();
+        var actual = await client.GetFromJsonAsync<JsonElement>("/account/me");
+        Assert.Equal(expected.GetProperty("id").GetString(), actual.GetProperty("id").GetString());
+        Assert.Equal(credentials.Email, actual.GetProperty("email").GetString());
+        using var otherClient = await fixture.CreateAccountClientAsync();
+        using var isolated = await otherClient.GetAsync("/account/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, isolated.StatusCode);
+        await RegistrationFixture.RefreshCsrfAsync(client);
+        using var logout = await client.PostAsync("/account/logout", null);
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+        using var afterLogout = await client.GetAsync("/account/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
+    }
+
+    [Theory]
+    [InlineData("register")]
+    [InlineData("login")]
+    public async Task Account_writes_require_valid_csrf_token(string action)
+    {
+        using var client = await fixture.CreateAccountClientAsync();
+        client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        using var response = await client.PostAsJsonAsync($"/account/{action}", new
+        {
+            Email = "csrf@example.com", Password = ValidPassword
+        });
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        await AssertUserCountAsync(0);
+    }
+
+    [Fact]
+    public async Task Logout_rejects_invalid_csrf_without_ending_session()
+    {
+        using var client = await fixture.CreateAccountClientAsync();
+        var credentials = new { Email = "csrf@example.com", Password = ValidPassword };
+        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
+        client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", "invalid");
+        using var logout = await client.PostAsync("/account/logout", null);
+        Assert.Equal(HttpStatusCode.BadRequest, logout.StatusCode);
+        using var me = await client.GetAsync("/account/me");
+        Assert.Equal(HttpStatusCode.OK, me.StatusCode);
     }
 }

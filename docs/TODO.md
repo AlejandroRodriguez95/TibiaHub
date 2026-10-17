@@ -2,31 +2,30 @@
 
 ## Current State
 
-- Docker Compose runs PostgreSQL locally on `127.0.0.1:5433`.
-- EF Core is installed and configured for PostgreSQL.
-- ASP.NET Core Identity is wired into the API.
-- The initial Identity migration has been created and applied.
-- The database has the default Identity tables, including `AspNetUsers` and `AspNetRoles`.
-- The solution builds successfully.
+- PostgreSQL runs locally through Docker Compose on `127.0.0.1:5433`.
+- EF Core and ASP.NET Core Identity are configured; the initial migration is applied.
+- Registration, cookie login, authenticated current-user lookup, and logout are implemented.
+- Angular includes login and registration forms, restores the session through `/account/me`, and supports logout.
+- Account writes require an antiforgery token; development CORS allows credentials from `http://localhost:4200`.
+- Integration tests cover registration, login, session isolation, logout, and CSRF validation.
 
-## Next Step
+## Authentication Decision
 
-Build a small authentication API:
+Use Identity cookies for the Angular browser frontend. JWT issuance and refresh tokens are outside the current scope. Future bots can use a separate authentication mechanism if needed; public character lookup does not require login.
 
-- `POST /auth/register`
-- `POST /auth/login`
-- `GET /auth/me`
+See [AUTHENTICATION.md](AUTHENTICATION.md) for the request flow and security settings.
+
+## Next Steps
+
+- Manually exercise registration, login, page refresh, and logout in Angular.
+- Add protected frontend routes when a feature needs them.
+- Move local database credentials to .NET user secrets.
+- Add email confirmation and password recovery before public account registration.
+- Configure deployment origins, HTTPS, and persistent Data Protection keys before hosting.
 
 ## Learning Focus
 
 - How `UserManager<ApplicationUser>` creates users and hashes passwords.
-- How `SignInManager<ApplicationUser>` checks login credentials.
-- How authentication identifies the current user.
-- How `[Authorize]` protects API endpoints.
-
-## Later
-
-- Decide whether the API should use JWT or cookies for Angular authentication.
-- Add Angular login and registration screens.
-- Move local database connection string to .NET user secrets.
-- Add tests around registration and login behavior.
+- How `SignInManager<ApplicationUser>` issues and clears authentication cookies.
+- How authentication populates `User` and `[Authorize]` protects endpoints.
+- How antiforgery tokens protect cookie-authenticated writes.

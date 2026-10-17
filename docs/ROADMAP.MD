@@ -11,7 +11,7 @@ The long-term idea is to provide different Tibia-related features through a web 
 - Frontend: Angular, kept in the same repository but separated from backend projects.
 - Backend server: ASP.NET Core.
 - API: ASP.NET Core, separated as its own project inside the same solution.
-- Authentication: ASP.NET Core Identity with JWT-based API authentication.
+- Authentication: ASP.NET Core Identity with cookie authentication for Angular.
 - Database: PostgreSQL running through Docker for local development.
 - Project style: learning-focused, but structured cleanly enough to serve as a portfolio project.
 
@@ -55,8 +55,8 @@ Separating the API from the backend server is useful because:
 
 - Use ASP.NET Core Identity for user management.
 - Implement user registration and login.
-- Add JWT issuing and validation for API requests.
-- Add refresh-token strategy if needed.
+- Use HttpOnly Identity cookies for browser sessions.
+- Validate antiforgery tokens for state-changing account requests.
 - Define basic roles or claims.
 - Protect selected API endpoints.
 
@@ -66,7 +66,7 @@ Separating the API from the backend server is useful because:
 - Set up routing.
 - Add HTTP client services for the API.
 - Add login and registration screens.
-- Store and attach JWT access tokens.
+- Send credentials with account requests and fetch CSRF tokens before writes.
 - Add route guards for authenticated pages.
 
 ### 5. First Tibia Features
@@ -116,7 +116,7 @@ The first feature should stay small enough to finish end-to-end across API, back
 - The frontend will live in the same repository as a separate Angular app.
 - PostgreSQL will be used as the database.
 - Docker will be used for local PostgreSQL setup.
-- Authentication will use ASP.NET Core Identity plus JWT.
+- Authentication will use ASP.NET Core Identity plus cookies for the browser frontend.
 - Character lookup will be the first feature.
 - Character data will come from an external Tibia API, selected later.
 
@@ -124,7 +124,7 @@ The first feature should stay small enough to finish end-to-end across API, back
 
 - Exact solution and folder naming.
 - Exact external Tibia API provider.
-- Whether refresh tokens are needed in the first auth version.
+- Authentication for future external clients, when concrete requirements exist.
 - Whether to add Docker Compose immediately or when persistence is first implemented.
 
 ## Current Input Needed
