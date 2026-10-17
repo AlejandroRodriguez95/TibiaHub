@@ -5,7 +5,7 @@
 - PostgreSQL runs locally through Docker Compose on `127.0.0.1:5433`.
 - EF Core and ASP.NET Core Identity are configured; the initial migration is applied.
 - Registration, cookie login, authenticated current-user lookup, and logout are implemented.
-- Angular includes login and registration forms, restores the session through `/account/me`, and supports logout.
+- Angular has separate `/login`, `/register`, and `/account` pages, restores the session through `/account/myaccount`, and supports logout. Character lookup remains at `/`.
 - Account writes require an antiforgery token; development CORS allows credentials from `http://localhost:4200`.
 - Integration tests cover registration, login, session isolation, logout, and CSRF validation.
 

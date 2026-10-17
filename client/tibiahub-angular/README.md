@@ -60,7 +60,9 @@ For more information on using the Angular CLI, including detailed command refere
 
 ## Account authentication
 
-The account panel supports registration, login, session restoration, and logout.
+The frontend has separate `/login`, `/register`, and `/account` pages with shared
+navigation. `/account` shows the signed-in user's email and ID and provides logout.
+Character lookup remains at `/`. Account pages restore the session on entry.
 Start the API with `dotnet run --project TibiaHub --launch-profile http` from the
 repository root. Account requests use `http://localhost:5267/account` with
 `withCredentials: true`; use `http://localhost:4200` for the Angular origin.

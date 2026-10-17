@@ -581,8 +581,8 @@ outside Development, and returns API status codes instead of login redirects.
 Development CORS allows credentials only from the explicit Angular origin.
 Angular must also send `withCredentials: true` to receive and send cookies.
 
-`[Authorize]` on `/account/me` and `/account/logout` requires an authenticated
-identity. `/me` resolves that identity with `UserManager.GetUserAsync(User)`;
+`[Authorize]` on `/account/myaccount` and `/account/logout` requires an authenticated
+identity. `/myaccount` resolves that identity with `UserManager.GetUserAsync(User)`;
 logout calls `SignInManager.SignOutAsync()` to clear the browser cookie.
 
 See [AUTHENTICATION.md](AUTHENTICATION.md) for the full flow and deployment notes.

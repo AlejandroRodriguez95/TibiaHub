@@ -1,30 +1,25 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { App } from './app';
+import { routes } from './app.routes';
 
-describe('App', () => {
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
-    })
-      .compileComponents();
-  });
+describe('App navigation', () => {
+  beforeEach(() => TestBed.configureTestingModule({
+    imports: [App], providers: [provideHttpClient(), provideRouter(routes)],
+  }));
 
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('should render title', async () => {
+  it('links to the three account pages', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    TestBed.inject(HttpTestingController).expectOne('http://localhost:5267/account/me')
-      .flush(null, { status: 401, statusText: 'Unauthorized' });
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Character lookup');
+    const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('nav a')];
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/login', '/register', '/account']);
+  });
+
+  it('keeps character lookup on the home page', async () => {
+    const harness = await RouterTestingHarness.create('/');
+    expect(harness.routeNativeElement!.querySelector('h1')?.textContent).toContain('Character lookup');
+    expect(harness.routeNativeElement!.querySelector('#character-name')).toBeTruthy();
   });
 });

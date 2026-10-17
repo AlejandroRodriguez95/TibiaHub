@@ -170,27 +170,27 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Cookie_identifies_user_until_logout()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var anonymous = await client.GetAsync("/account/me");
+        using var anonymous = await client.GetAsync("/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
         Assert.Null(anonymous.Headers.Location);
         var credentials = new { Email = "session@example.com", Password = ValidPassword };
         using var registration = await client.PostAsJsonAsync("/account/register", credentials);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
-        using var afterRegistration = await client.GetAsync("/account/me");
+        using var afterRegistration = await client.GetAsync("/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, afterRegistration.StatusCode);
         using var login = await client.PostAsJsonAsync("/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var expected = await login.Content.ReadFromJsonAsync<JsonElement>();
-        var actual = await client.GetFromJsonAsync<JsonElement>("/account/me");
+        var actual = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
         Assert.Equal(expected.GetProperty("id").GetString(), actual.GetProperty("id").GetString());
         Assert.Equal(credentials.Email, actual.GetProperty("email").GetString());
         using var otherClient = await fixture.CreateAccountClientAsync();
-        using var isolated = await otherClient.GetAsync("/account/me");
+        using var isolated = await otherClient.GetAsync("/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, isolated.StatusCode);
         await RegistrationFixture.RefreshCsrfAsync(client);
         using var logout = await client.PostAsync("/account/logout", null);
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
-        using var afterLogout = await client.GetAsync("/account/me");
+        using var afterLogout = await client.GetAsync("/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
     }
 
@@ -222,7 +222,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", "invalid");
         using var logout = await client.PostAsync("/account/logout", null);
         Assert.Equal(HttpStatusCode.BadRequest, logout.StatusCode);
-        using var me = await client.GetAsync("/account/me");
+        using var me = await client.GetAsync("/account/myaccount");
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);
     }
 }

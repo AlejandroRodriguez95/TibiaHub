@@ -1,0 +1,72 @@
+
+  <section class="lookup-panel" aria-labelledby="page-title">
+    <div class="page-header">
+      <p class="eyebrow">TibiaHub</p>
+      <h1 id="page-title">Character lookup</h1>
+      <p class="intro">Search a Tibia character and view the first profile fields from the TibiaHub API.</p>
+    </div>
+
+    <form class="search-form" (ngSubmit)="searchCharacter()">
+      <label for="character-name">Character name</label>
+      <div class="search-row">
+        <input
+          id="character-name"
+          name="characterName"
+          type="text"
+          [ngModel]="characterName()"
+          (ngModelChange)="updateCharacterName($event)"
+          autocomplete="off"
+          placeholder="Trollefar"
+        />
+        <button type="submit" [disabled]="isLoading()">
+          {{ isLoading() ? 'Searching...' : 'Search' }}
+        </button>
+      </div>
+    </form>
+
+    @if (errorMessage()) {
+      <p class="message error">{{ errorMessage() }}</p>
+    }
+
+    @if (character(); as character) {
+      <section class="character-result" aria-label="Character result">
+        <div class="character-heading">
+          <div>
+            <h2>{{ character.name }}</h2>
+            <p>{{ character.vocation || 'Unknown vocation' }}</p>
+          </div>
+          <span class="level">Level {{ character.level || '?' }}</span>
+        </div>
+
+        <dl class="character-details">
+          <div>
+            <dt>World</dt>
+            <dd>{{ character.world || 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>Residence</dt>
+            <dd>{{ character.residence || 'Unknown' }}</dd>
+          </div>
+          <div>
+            <dt>Guild</dt>
+            <dd>
+              @if (character.guild?.name) {
+                {{ character.guild?.rank }} of {{ character.guild?.name }}
+              } @else {
+                No guild
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Account</dt>
+            <dd>{{ character.account_status || 'Unknown' }}</dd>
+          </div>
+        </dl>
+      </section>
+    } @else if (!hasSearched()) {
+      <p class="message muted">Run a search to show character data.</p>
+    }
+
+  </section>
+
+

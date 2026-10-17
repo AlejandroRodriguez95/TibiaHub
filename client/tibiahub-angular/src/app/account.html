@@ -1,0 +1,53 @@
+<section class="lookup-panel" aria-labelledby="account-title">
+  <header class="page-header">
+    <p class="eyebrow">TibiaHub account</p>
+    <h1 id="account-title">{{ mode() === 'account' ? 'My account' : mode() === 'register' ? 'Create an account' : 'Welcome back' }}</h1>
+    <p class="intro">{{ mode() === 'account' ? 'View your account details and manage your session.' : mode() === 'register' ? 'Join TibiaHub with your email and a password.' : 'Log in to your TibiaHub account.' }}</p>
+  </header>
+  @if (checking()) {
+    <p role="status">Checking your session...</p>
+  } @else if (sessionError()) {
+    <p class="message error" role="alert">{{ sessionError() }}</p>
+    <button type="button" (click)="loadSession()">Retry</button>
+  } @else if (user(); as user) {
+    @if (mode() === 'account') {
+      <p>Signed in as {{ user.email }}</p>
+      <dl class="character-details account-details">
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+        <div><dt>User ID</dt><dd>{{ user.id }}</dd></div>
+      </dl>
+      <div class="account-actions">
+        <button type="button" (click)="logout()" [disabled]="busy()">{{ busy() ? 'Logging out...' : 'Log out' }}</button>
+        <a routerLink="/">Look up a character</a>
+      </div>
+    } @else {
+      <p>You are already signed in as {{ user.email }}.</p>
+      <p class="message"><a routerLink="/account">Go to my account</a></p>
+    }
+  } @else if (mode() === 'account') {
+    <p>You need to log in to view your account.</p>
+    <div class="account-actions"><a routerLink="/login">Log in</a><a routerLink="/register">Create an account</a></div>
+  } @else {
+    <form class="search-form account-form" #form="ngForm" (ngSubmit)="form.valid && submit()">
+      <label for="account-email">Email</label>
+      <input id="account-email" name="email" type="email" required email
+        autocomplete="username" [(ngModel)]="email" [disabled]="busy()" />
+      <label for="account-password">Password</label>
+      <input id="account-password" name="password" type="password" required
+        [attr.autocomplete]="mode() === 'register' ? 'new-password' : 'current-password'"
+        [(ngModel)]="password" [disabled]="busy()" />
+      @if (mode() === 'register') {
+        <p class="muted">Use at least 6 characters, including uppercase, lowercase, a number, and a symbol.</p>
+      }
+      <button type="submit" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Please wait...' : mode() === 'login' ? 'Log in' : 'Create account' }}
+      </button>
+    </form>
+    <p class="message">
+      @if (mode() === 'login') { New to TibiaHub? <a routerLink="/register">Create an account</a> }
+      @else { Already have an account? <a routerLink="/login">Log in</a> }
+    </p>
+  }
+  @if (message()) { <p class="message" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="message error" role="alert">{{ error() }}</p> }
+</section>
