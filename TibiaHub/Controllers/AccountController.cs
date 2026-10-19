@@ -9,7 +9,6 @@ using TibiaHub.Routes;
 namespace TibiaHub.Controllers;
 
 [ApiController]
-[AutoValidateAntiforgeryToken]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 [Route(ApiRoutes.Account)]
 public sealed class AccountController(

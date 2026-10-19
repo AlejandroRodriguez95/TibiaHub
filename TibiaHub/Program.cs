@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TibiaHub.Data;
 using TibiaHub.External.TibiaData;
@@ -7,7 +8,10 @@ using TibiaHub.Identity;
 var builder = WebApplication.CreateBuilder(args);
 
 // The MVC antiforgery validation filter requires the view-feature services.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {

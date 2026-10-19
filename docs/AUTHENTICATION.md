@@ -12,7 +12,7 @@ TibiaHub uses ASP.NET Core Identity with cookies for Angular. Identity continues
 | GET | `/account/myaccount` | Returns `{ id, email }` for the current user, or 401. |
 | POST | `/account/logout` | Requires authentication, clears the cookie, and returns 204. |
 
-All account POST requests require the antiforgery cookie and the corresponding token in `X-CSRF-TOKEN`. Missing or invalid tokens return 400. Fetch a new token after authentication changes: tokens are bound to the current identity. Angular fetches a fresh token before each write. Account responses are marked `no-store`.
+MVC controllers use a global `AutoValidateAntiforgeryTokenAttribute` filter configured in `Program.cs`. Requests using methods other than GET, HEAD, OPTIONS, and TRACE require the antiforgery cookie and the corresponding token in `X-CSRF-TOKEN`. Missing or invalid tokens return 400. This includes all account POST requests and future controller writes. Fetch a new token after authentication changes: tokens are bound to the current identity. Angular fetches a fresh token before each write. Account responses are marked `no-store`.
 
 The browser stores the HttpOnly authentication cookie; Angular does not store credentials or tokens in localStorage. The session cookie is not persistent, and Identity controls ticket expiration and renewal. Logout clears the browser cookie; it does not revoke a copied cookie held elsewhere. Account disabling and immediate revocation need additional policy if introduced.
 
