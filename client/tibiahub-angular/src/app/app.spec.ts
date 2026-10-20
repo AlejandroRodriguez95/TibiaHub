@@ -15,7 +15,7 @@ describe('App navigation', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('nav a')];
-    expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/characters', '/login', '/account']);
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/characters', '/tools', '/login', '/account']);
   });
 
   it('shows the landing page at home', async () => {

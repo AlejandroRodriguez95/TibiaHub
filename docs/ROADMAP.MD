@@ -112,6 +112,10 @@ The first feature should stay small enough to finish end-to-end across API, back
 
 ## Current Decisions
 
+- The frontend uses the Petrol & Lantern design system; see `FRONTEND_DESIGN.md`.
+- The first Tools feature is [NPC selling](features/NPC_SELLING.md), backed by the
+  separate [shared refresh service](DATA_REFRESH.md), including [world market averages](features/MARKET_VALUES.md).
+
 - API and backend code will be separate projects inside the same solution.
 - The frontend will live in the same repository as a separate Angular app.
 - PostgreSQL will be used as the database.

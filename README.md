@@ -57,6 +57,13 @@ The API supports public TibiaData character lookup and Identity account registra
 login, current-user lookup, and logout. Angular provides character lookup and account
 forms with cookie sessions and CSRF protection.
 
+The Petrol & Lantern frontend includes a Tools tab with an NPC selling catalogue.
+Configure merchants in `TibiaHub/DataRefresh/refresh-sources.json`. A shared background
+collector refreshes prices and delivery-task membership daily at 10:30 Europe/Vienna,
+retaining the last complete snapshot across failures and restarts. Independently cached
+[world market averages](docs/features/MARKET_VALUES.md) support price comparisons. See [NPC selling](docs/features/NPC_SELLING.md) and
+[shared data refreshing](docs/DATA_REFRESH.md).
+
 See [the roadmap](docs/ROADMAP.MD), [current next steps](docs/TODO.md), and
 [authentication details](docs/AUTHENTICATION.md).
 

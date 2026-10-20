@@ -38,7 +38,8 @@ public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsync
         builder.ConfigureAppConfiguration((_, configuration) =>
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = database.GetConnectionString()
+                ["ConnectionStrings:DefaultConnection"] = database.GetConnectionString(),
+                ["DataRefresh:Enabled"] = "false"
             }));
     }
 
