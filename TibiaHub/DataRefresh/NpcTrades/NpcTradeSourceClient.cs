@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace TibiaHub.DataRefresh.NpcTrades;
 
-public sealed class NpcTradeSourceClient(HttpClient http, IOptionsMonitor<NpcTradeSourceOptions> options)
+public sealed class NpcTradeSourceClient(HttpClient http, IOptionsMonitor<NpcTradeSourceOptions> options, UpstreamRequestPolicy requests)
 {
     public async Task<string> ValidateNpcAsync(string name, CancellationToken token)
     {
@@ -26,21 +26,9 @@ public sealed class NpcTradeSourceClient(HttpClient http, IOptionsMonitor<NpcTra
 
     private async Task<JsonDocument> ReadAsync(string url, CancellationToken token)
     {
-        // Bounded transient retries; honor upstream throttling without an unbounded wait.
-        for (var attempt = 0; ; attempt++)
-        {
-            using var response = await http.GetAsync(url, token);
-            if (attempt < 2 && ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500))
-            {
-                var delay = response.Headers.RetryAfter?.Delta
-                    ?? (response.Headers.RetryAfter?.Date - DateTimeOffset.UtcNow)
-                    ?? TimeSpan.FromSeconds(2 << attempt);
-                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(delay.TotalSeconds, 1, 60)), token);
-                continue;
-            }
-            response.EnsureSuccessStatusCode();
-            await using var stream = await response.Content.ReadAsStreamAsync(token);
-            return await JsonDocument.ParseAsync(stream, cancellationToken: token);
-        }
+        using var response = await requests.GetAsync(http, url, token);
+        response.EnsureSuccessStatusCode();
+        await using var stream = await response.Content.ReadAsStreamAsync(token);
+        return await JsonDocument.ParseAsync(stream, cancellationToken: token);
     }
 }

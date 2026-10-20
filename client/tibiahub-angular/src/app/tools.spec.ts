@@ -35,6 +35,15 @@ describe('NPC selling tool', () => {
     expect(element.querySelector('.delivery-task .market-higher')?.textContent).toContain('35,000');
     expect(element.querySelector('tbody')?.textContent).toContain('Unavailable');
     expect(element.querySelector('tbody')?.textContent).toContain('30,000');
+    const sort = element.querySelector<HTMLButtonElement>('.delivery-sort')!;
+    sort.click();
+    fixture.detectChanges();
+    expect(element.querySelector('tbody tr')?.textContent).toContain('Golden Legs');
+    expect(sort.closest('th')?.getAttribute('aria-sort')).toBe('descending');
+    sort.click();
+    fixture.detectChanges();
+    expect(element.querySelector('tbody tr')?.textContent).toContain('Other Item');
+    expect(sort.closest('th')?.getAttribute('aria-sort')).toBe('ascending');
     http.verify();
   });
 

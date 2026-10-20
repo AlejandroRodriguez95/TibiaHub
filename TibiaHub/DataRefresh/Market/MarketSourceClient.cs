@@ -3,19 +3,17 @@ using Microsoft.Extensions.Options;
 
 namespace TibiaHub.DataRefresh.Market;
 
-public sealed class MarketSourceClient(HttpClient http, IOptionsMonitor<MarketSourceOptions> options, TimeProvider clock)
+public sealed class MarketSourceClient(HttpClient http, IOptionsMonitor<MarketSourceOptions> options, UpstreamRequestPolicy requests)
 {
-    private readonly SemaphoreSlim requestGate = new(1, 1);
-    private DateTimeOffset nextRequest = DateTimeOffset.MinValue;
-    public async Task<string[]> WorldsAsync(CancellationToken token)
+    public async Task<MarketWorldStatus[]> WorldStatusesAsync(CancellationToken token)
     {
-        using var wiki = await ReadAsync(options.CurrentValue.WorldsUrl, token);
         using var market = await ReadAsync(Url("world_data"), token);
-        var wikiNames = wiki.RootElement.EnumerateArray().Select(w => w.GetString()!).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var names = market.RootElement.EnumerateArray().Select(w => w.GetProperty("name").GetString()!)
-            .Where(w => wikiNames.Contains(w) && w.All(char.IsAsciiLetter)).Distinct(StringComparer.OrdinalIgnoreCase).Order().ToArray();
-        if (names.Length == 0) throw new InvalidDataException("No supported wiki worlds were found.");
-        return names;
+        var worlds = market.RootElement.EnumerateArray().Select(w => new MarketWorldStatus(
+            w.GetProperty("name").GetString()!, w.GetProperty("last_update").GetDateTimeOffset())).ToArray();
+        if (worlds.Length == 0 || worlds.Any(w => string.IsNullOrWhiteSpace(w.Name) || !w.Name.All(char.IsAsciiLetter))
+            || worlds.Select(w => w.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != worlds.Length)
+            throw new InvalidDataException("Invalid market world status data.");
+        return worlds;
     }
 
     public async Task<MarketItemIndex> ItemsAsync(CancellationToken token)
@@ -61,33 +59,9 @@ public sealed class MarketSourceClient(HttpClient http, IOptionsMonitor<MarketSo
 
     private async Task<JsonDocument> ReadAsync(string url, CancellationToken token)
     {
-        for (var attempt = 0; ; attempt++)
-        {
-            using var response = await SendAsync(url, token);
-            if (attempt < 2 && ((int)response.StatusCode == 429 || (int)response.StatusCode >= 500))
-            {
-                var delay = response.Headers.RetryAfter?.Delta ?? (response.Headers.RetryAfter?.Date - DateTimeOffset.UtcNow) ?? TimeSpan.FromSeconds(2 << attempt);
-                await Task.Delay(TimeSpan.FromSeconds(Math.Clamp(delay.TotalSeconds, 1, 60)), token);
-                continue;
-            }
-            response.EnsureSuccessStatusCode();
-            await using var stream = await response.Content.ReadAsStreamAsync(token);
-            return await JsonDocument.ParseAsync(stream, cancellationToken: token);
-        }
-    }
-
-    private async Task<HttpResponseMessage> SendAsync(string url, CancellationToken token)
-    {
-        if (new Uri(url).Authority != new Uri(options.CurrentValue.BaseUrl).Authority)
-            return await http.GetAsync(url, token);
-        await requestGate.WaitAsync(token);
-        try
-        {
-            var wait = nextRequest - clock.GetUtcNow();
-            if (wait > TimeSpan.Zero) await Task.Delay(wait, clock, token);
-            nextRequest = clock.GetUtcNow().AddSeconds(Math.Max(0, options.CurrentValue.RequestIntervalSeconds));
-            return await http.GetAsync(url, token);
-        }
-        finally { requestGate.Release(); }
+        using var response = await requests.GetAsync(http, url, token);
+        response.EnsureSuccessStatusCode();
+        await using var stream = await response.Content.ReadAsStreamAsync(token);
+        return await JsonDocument.ParseAsync(stream, cancellationToken: token);
     }
 }

@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using TibiaHub.DataRefresh.Worlds;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +15,8 @@ namespace TibiaHub.Controllers;
 [Route(ApiRoutes.Account)]
 public sealed class AccountController(
     UserManager<ApplicationUser> userManager,
-    SignInManager<ApplicationUser> signInManager) : ControllerBase
+    SignInManager<ApplicationUser> signInManager,
+    WorldListService worlds) : ControllerBase
 {
     [HttpGet(ApiRoutes.AccountRoutes.Csrf)]
     public IResult Csrf(IAntiforgery antiforgery) =>
@@ -21,13 +24,38 @@ public sealed class AccountController(
 
     [Authorize]
     [HttpGet(ApiRoutes.AccountRoutes.MyAccount)]
-    public async Task<IResult> MyAccount()
+    public async Task<IResult> MyAccount(CancellationToken token)
     {
         var user = await userManager.GetUserAsync(User);
         return user is null ? Results.Unauthorized() : Results.Ok(new
         {
-            user.Id, user.Email, IsAdmin = User.IsInRole(ApplicationRoles.Admin)
+            user.Id, user.Email, IsAdmin = User.IsInRole(ApplicationRoles.Admin),
+            DefaultWorld = (await userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == DefaultWorldClaim)?.Value,
+            Worlds = await worlds.GetWorldsAsync(token)
         });
+    }
+
+    public const string DefaultWorldClaim = "tibiahub:default-world";
+
+    [Authorize]
+    [HttpPost("default-world")]
+    public async Task<IResult> SetDefaultWorld(DefaultWorldRequest request, CancellationToken token)
+    {
+        var user = await userManager.GetUserAsync(User);
+        if (user is null) return Results.Unauthorized();
+        var available = await worlds.GetWorldsAsync(token);
+        var world = string.IsNullOrWhiteSpace(request.World) ? null
+            : available.FirstOrDefault(w => w.Equals(request.World.Trim(), StringComparison.OrdinalIgnoreCase));
+        if (!string.IsNullOrWhiteSpace(request.World) && world is null)
+            return Results.ValidationProblem(new Dictionary<string, string[]> { ["world"] = ["Choose a world from the available list."] });
+        var previous = (await userManager.GetClaimsAsync(user)).FirstOrDefault(c => c.Type == DefaultWorldClaim);
+        IdentityResult result;
+        if (previous is null)
+            result = world is null ? IdentityResult.Success : await userManager.AddClaimAsync(user, new Claim(DefaultWorldClaim, world));
+        else
+            result = world is null ? await userManager.RemoveClaimAsync(user, previous)
+                : await userManager.ReplaceClaimAsync(user, previous, new Claim(DefaultWorldClaim, world));
+        return result.Succeeded ? Results.Ok(new { DefaultWorld = world }) : Results.BadRequest(new { errors = result.Errors });
     }
 
     [Authorize]
@@ -103,3 +131,5 @@ public sealed record LoginRequest(
     string Email,
     [Required]
     string Password);
+
+public sealed record DefaultWorldRequest([MaxLength(100)] string? World);

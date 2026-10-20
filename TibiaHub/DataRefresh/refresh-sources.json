@@ -4,6 +4,12 @@
     "CacheDirectory": "App_Data/refresh",
     "Schedules": [
       {
+        "Job": "world-list",
+        "DailyAt": "10:30",
+        "TimeZone": "Europe/Vienna",
+        "RetryMinutes": 1
+      },
+      {
         "Job": "npc-trades",
         "DailyAt": "10:30",
         "TimeZone": "Europe/Vienna",
@@ -19,13 +25,18 @@
   },
   "MarketSource": {
     "BaseUrl": "https://api.tibiamarket.top:8001/",
-    "WorldsUrl": "https://tibiawiki.dev/api/worlds",
     "AverageBasis": "buy",
     "RequestIntervalSeconds": 6
   },
   "NpcTradeSource": {
-    "NpcNames": ["Rashid", "Yasir"],
+    "NpcNames": [
+      "Rashid",
+      "Yasir"
+    ],
     "WikiApiUrl": "https://tibia.fandom.com/api.php",
     "TibiaWikiApiUrl": "https://tibiawiki.dev/"
+  },
+  "WorldSource": {
+    "Url": "https://tibiawiki.dev/api/worlds"
   }
 }

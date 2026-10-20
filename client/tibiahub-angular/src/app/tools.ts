@@ -45,6 +45,20 @@ export class Tools implements OnDestroy {
   protected readonly brokenIcons = signal(new Set<string>());
   protected readonly selectedNpc = computed(() => this.catalog()?.npcs.find(n => n.name === this.selectedName()));
 
+  protected readonly deliverySort = signal<'none' | 'first' | 'last'>('none');
+  protected readonly sortedItems = computed(() => {
+    const items = this.selectedNpc()?.items ?? [];
+    const order = this.deliverySort();
+    if (order === 'none') return items;
+    return [...items].sort((a, b) => order === 'first'
+      ? Number(b.isDeliveryTask) - Number(a.isDeliveryTask)
+      : Number(a.isDeliveryTask) - Number(b.isDeliveryTask));
+  });
+
+  protected toggleDeliverySort(): void {
+    this.deliverySort.update(order => order === 'first' ? 'last' : 'first');
+  }
+
   constructor() { this.load(); }
   ngOnDestroy(): void { this.request?.unsubscribe(); }
 
@@ -54,6 +68,7 @@ export class Tools implements OnDestroy {
     this.error.set('');
     const world = this.selectedWorld();
     this.request = this.http.get<Catalog>('http://localhost:5267/tools/npc-selling', {
+      withCredentials: true,
       params: world ? { world } : {},
     }).subscribe({
       next: catalog => {

@@ -1,6 +1,6 @@
 # World market values
 
-The NPC selling tool at `/tools` now includes a **Market world** dropdown. Its values come from the [TibiaWiki world list](https://tibiawiki.dev/api/worlds), intersected with the market provider's `/world_data` list. The wiki list includes historic worlds and a category page; only named worlds the market provider actually supports are offered. Supported does not imply a recent scan.
+The NPC selling tool at `/tools` includes a **Market world** dropdown supplied by the independent world directory. Market collection intersects that directory with the provider's `/world_data` list. Worlds without collected market data remain unavailable; supported does not imply a recent scan.
 
 ## Collection
 
@@ -8,13 +8,17 @@ The independent `market-prices` job uses the shared refresh coordinator: daily a
 
 Source: [TibiaMarket API](https://api.tibiamarket.top:8001/docs#/default/get_market_values_market_values_get), contract at `/openapi.json`.
 
-- `GET /world_data` identifies supported worlds.
+- `GET /world_data` returns supported worlds and their `last_update` scan timestamps in one call.
 - `GET /item_metadata` returns all item metadata, including IDs, in-game names, and wiki names.
 - `GET /market_values?server={world}&skip={offset}&limit=10000` collects **all** items for each supported world, without NPC/item filters. Pagination continues until a short page; duplicate IDs or an excessive page count reject that world's refresh.
 
-Every world has its own complete snapshot. Successful worlds become available immediately, even while others are still collecting. Failed worlds retain their previous data and are retried after 15 minutes. Progress is persisted, so a restart resumes pending worlds without downloading successful worlds from that cycle again. Future daily cycles rediscover the world list and item metadata.
+Each collection attempt (including retries) reads world statuses and item metadata. A world is queued only if its cache is missing, belongs to another source, lacks a scan marker, or the advertised scan timestamp is newer than the cached marker. Unchanged and older timestamps do not trigger price downloads, and skipped worlds keep their original collection times. Legacy caches without scan markers are fetched once to establish them.
 
-This initial collection downloads every supported world and currently takes roughly **12 minutes** for 113 worlds. The provider enforces **one request per five seconds** (verified via its 429 response); the client spaces market-host requests by six seconds, including retries and pagination. `MarketSource.RequestIntervalSeconds` configures the spacing. Per-request timeouts and bounded HTTP 429/5xx retries remain in place. One world failing does not block already collected worlds or the NPC tool. A new daily schedule starts a new cycle even if the previous day's failures remain, so successful worlds are not stuck with yesterday's data. No browser request triggers upstream downloads.
+Each world's full price snapshot stores its successfully fetched provider scan timestamp as `ProviderUpdatedAt`. This is persisted atomically with the prices, so successful worlds remain skipped after a restart or a crash before queue progress was saved. Successful worlds become available immediately; failed worlds retain previous prices and retry after 15 minutes. A provider update that occurs during collection is detected on the next scheduled attempt or retry.
+
+Queue priority is descending aggregate request count, then newest provider scan, then world name for ties. The order is recalculated between world fetches. A validated world selection in `GET /tools/npc-selling` counts as demand, including preferred defaults and unavailable prices. Invalid selections and requests without a world do not count. Counts are case-insensitive, held in memory since backend startup, and contain no user identifiers. They reset on restart; scan markers persist. Popularity changes ordering only: every queued world is still attempted, and requests never trigger upstream fetches directly.
+
+An initial collection downloads every supported world; later collections download only worlds with newer scans or missing caches. The provider enforces **one request per five seconds** (verified via its 429 response); the shared request policy spaces market-host requests by at least six seconds, including retries and pagination. `MarketSource.RequestIntervalSeconds` can increase the spacing but cannot lower it below six seconds. HTTP 429/5xx retries are limited to two; the full `Retry-After` delay applies to every caller of that host, including after a final failure. Per-request timeouts exclude limiter queueing and cooldown waits. One world failing does not block already collected worlds or the NPC tool. Every scheduled attempt rechecks provider timestamps, so newer scans can be queued even while other worlds still need retries. No browser request triggers upstream downloads.
 
 ## Average and matching rules
 
@@ -30,9 +34,10 @@ If the selected average is **strictly greater** than the NPC purchase price, the
 
 Storage remains JSON files under `TibiaHub/App_Data/refresh`, **not PostgreSQL**:
 
-- `MarketWorldList.json`: supported worlds and pending-cycle progress.
+- `WorldList.json`: shared world directory, refreshed independently.
+- `MarketWorldList.json`: market-supported worlds, advertised scan timestamps, and pending-cycle progress.
 - `MarketItemIndex.json`: all item names and IDs.
-- `MarketWorldPrices.Antica.json` (and one file per world): all collected prices and source timestamps.
+- `MarketWorldPrices.Antica.json` (and one file per world): all collected prices, item timestamps, and the persisted provider scan marker.
 
 The files are ignored by Git and loaded on demand into memory. Missing/corrupt caches trigger collection. The market source key includes source URLs and a format version, never the NPC list or average basis.
 

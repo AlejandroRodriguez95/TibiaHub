@@ -41,8 +41,9 @@ describe('Account pages', () => {
     await open('/account', true);
     const element = harness.routeNativeElement!;
     expect(element.textContent).toContain('player@example.com');
-    expect(element.textContent).toContain('user-1');
-    element.querySelector('button')!.click();
+    expect(element.textContent).not.toContain('user-1');
+    expect(element.textContent).not.toContain('User ID');
+    element.querySelector<HTMLButtonElement>('.account-actions button')!.click();
     const csrf = http.expectOne(`${url}/csrf`);
     expect(csrf.request.withCredentials).toBe(true);
     csrf.flush({ token: 'fresh-token' });
@@ -53,6 +54,29 @@ describe('Account pages', () => {
     await settleNavigation();
     expect(TestBed.inject(Router).url).toContain('/login');
     expect(harness.routeNativeElement!.textContent).toContain('You have logged out.');
+  });
+
+  it('saves a preferred world from the cached list with CSRF protection', async () => {
+    await harness.navigateByUrl('/account');
+    http.expectOne(url + '/myaccount').flush({ id: 'user-1', email: 'player@example.com', defaultWorld: 'Antica', worlds: ['Antica', 'Secura'] });
+    harness.detectChanges();
+    await harness.fixture.whenStable();
+    const element = harness.routeNativeElement!;
+    const select = element.querySelector<HTMLSelectElement>('#default-world')!;
+    expect(select.value).toBe('Antica');
+    expect(element.textContent).not.toContain('Look up a character');
+    select.value = 'Secura';
+    select.dispatchEvent(new Event('change'));
+    await harness.fixture.whenStable();
+    element.querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+    http.expectOne(url + '/csrf').flush({ token: 'preference-token' });
+    const save = http.expectOne(url + '/default-world');
+    expect(save.request.body).toEqual({ world: 'Secura' });
+    expect(save.request.withCredentials).toBe(true);
+    expect(save.request.headers.get('X-CSRF-TOKEN')).toBe('preference-token');
+    save.flush({ defaultWorld: 'Secura' });
+    harness.detectChanges();
+    expect(element.textContent).toContain('Default world saved.');
   });
 
   it('asks anonymous visitors to log in on the account page', async () => {

@@ -5,18 +5,20 @@ namespace TibiaHub.DataRefresh.Market;
 public sealed class MarketSourceOptions
 {
     public string BaseUrl { get; set; } = "https://api.tibiamarket.top:8001/";
-    public string WorldsUrl { get; set; } = "https://tibiawiki.dev/api/worlds";
     // Change the basis without downloading again: both averages are retained.
     public string AverageBasis { get; set; } = "buy";
+    // The shared request policy enforces a six-second floor, even if configured lower.
     public int RequestIntervalSeconds { get; set; } = 6;
-    public string SourceKey => "market-v1|" + BaseUrl + "|" + WorldsUrl;
+    public string SourceKey => "market-v2|" + BaseUrl;
 }
 
-public sealed record MarketWorldList(string[] Worlds, DateTimeOffset CycleStartedAt, string[] PendingWorlds);
+public sealed record MarketWorldList(string[] Worlds, DateTimeOffset CycleStartedAt, string[] PendingWorlds,
+    Dictionary<string, DateTimeOffset>? ProviderUpdates = null);
+public sealed record MarketWorldStatus(string Name, DateTimeOffset LastUpdate);
 public sealed record MarketItemMetadata(int Id, string? WikiName, string? Name);
 public sealed record MarketItemIndex(IReadOnlyList<MarketItemMetadata> Items);
 public sealed record MarketItemPrice(int Id, long? MonthlyBuyAverage, long? MonthlySellAverage, DateTimeOffset SourceUpdatedAt);
-public sealed record MarketWorldPrices(string World, IReadOnlyList<MarketItemPrice> Items);
+public sealed record MarketWorldPrices(string World, IReadOnlyList<MarketItemPrice> Items, DateTimeOffset? ProviderUpdatedAt = null);
 
 public sealed class MarketWorldStore(IServiceProvider services)
 {

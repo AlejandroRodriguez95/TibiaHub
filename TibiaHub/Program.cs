@@ -8,6 +8,7 @@ using TibiaHub.Identity;
 using TibiaHub.DataRefresh;
 using TibiaHub.DataRefresh.NpcTrades;
 using TibiaHub.DataRefresh.Market;
+using TibiaHub.DataRefresh.Worlds;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("DataRefresh/refresh-sources.json", optional: false, reloadOnChange: true);
@@ -16,12 +17,22 @@ builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
 builder.Services.Configure<RefreshOptions>(builder.Configuration.GetSection("DataRefresh"));
 builder.Services.Configure<NpcTradeSourceOptions>(builder.Configuration.GetSection("NpcTradeSource"));
 builder.Services.Configure<MarketSourceOptions>(builder.Configuration.GetSection("MarketSource"));
+builder.Services.Configure<WorldSourceOptions>(builder.Configuration.GetSection("WorldSource"));
+builder.Services.AddSingleton<UpstreamRequestPolicy>();
+builder.Services.AddHttpClient("world-list", client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(45);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("TibiaHub/0.1 (world collector)");
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddSingleton<WorldListService>();
+builder.Services.AddSingleton<IRefreshJob>(services => services.GetRequiredService<WorldListService>());
 builder.Services.AddSingleton<MarketWorldStore>();
+builder.Services.AddSingleton<WorldRequestTracker>();
 builder.Services.AddHttpClient<MarketSourceClient>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(60);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("TibiaHub/0.1 (market collector)");
-});
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<IRefreshJob, MarketRefreshJob>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddSingleton(typeof(JsonSnapshotStore<>));
@@ -29,7 +40,7 @@ builder.Services.AddHttpClient<NpcTradeSourceClient>(client =>
 {
     client.Timeout = TimeSpan.FromSeconds(45);
     client.DefaultRequestHeaders.UserAgent.ParseAdd("TibiaHub/0.1 (NPC price collector)");
-});
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<IRefreshJob, NpcTradeRefreshJob>();
 builder.Services.AddHostedService<RefreshCoordinator>();
 

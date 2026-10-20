@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Identity;
+using TibiaHub.Identity;
 using Microsoft.Extensions.Options;
 using TibiaHub.DataRefresh;
 using TibiaHub.DataRefresh.NpcTrades;
 using TibiaHub.DataRefresh.Market;
+using TibiaHub.DataRefresh.Worlds;
 
 namespace TibiaHub.Controllers;
 
@@ -12,11 +15,11 @@ namespace TibiaHub.Controllers;
 public sealed class NpcSellingController(
     JsonSnapshotStore<NpcTradeCatalog> store,
     IOptionsMonitor<NpcTradeSourceOptions> source,
-    JsonSnapshotStore<MarketWorldList> marketWorlds,
+    WorldListService worldList, JsonSnapshotStore<MarketWorldList> marketWorlds,
     JsonSnapshotStore<MarketItemIndex> marketItems,
-    MarketWorldStore marketPrices,
+    MarketWorldStore marketPrices, WorldRequestTracker requests,
     IOptionsMonitor<MarketSourceOptions> marketOptions,
-    TimeProvider clock) : ControllerBase
+    TimeProvider clock, UserManager<ApplicationUser> userManager) : ControllerBase
 {
     [HttpGet]
     public async Task<IActionResult> Get(CancellationToken token, [FromQuery] string? world = null)
@@ -29,10 +32,18 @@ public sealed class NpcSellingController(
         }
         var key = marketOptions.CurrentValue.SourceKey;
         var worldSnapshot = await marketWorlds.ReadAsync(token);
-        var worlds = worldSnapshot?.SourceKey == key ? worldSnapshot.Data.Worlds : [];
+        var worlds = await worldList.GetWorldsAsync(token);
+        if (string.IsNullOrWhiteSpace(world) && User.Identity?.IsAuthenticated == true)
+        {
+            var user = await userManager.GetUserAsync(User);
+            var preferred = user is null ? null : (await userManager.GetClaimsAsync(user))
+                .FirstOrDefault(c => c.Type == AccountController.DefaultWorldClaim)?.Value;
+            if (preferred is not null && worlds.Contains(preferred, StringComparer.OrdinalIgnoreCase)) world = preferred;
+        }
         var selected = string.IsNullOrWhiteSpace(world) ? null : worlds.FirstOrDefault(w => w.Equals(world.Trim(), StringComparison.OrdinalIgnoreCase));
         if (!string.IsNullOrWhiteSpace(world) && selected is null)
             return BadRequest(new { message = "Select a world from the cached world list." });
+        if (selected is not null) requests.Record(selected);
         var metadata = await marketItems.ReadAsync(token);
         var market = selected is null ? null : await marketPrices.For(selected).ReadAsync(token);
         var available = market?.SourceKey == key && metadata?.SourceKey == key;
@@ -52,7 +63,7 @@ public sealed class NpcSellingController(
             MarketUpdatedAt = available ? market!.UpdatedAt : (DateTimeOffset?)null,
             MarketSourceOldestAt = oldest,
             MarketIsStale = available && (now - market!.UpdatedAt > TimeSpan.FromHours(25) || oldest is not null && now - oldest > TimeSpan.FromHours(25)),
-            MarketRefreshPending = selected is not null && worldSnapshot!.Data.PendingWorlds.Contains(selected),
+            MarketRefreshPending = selected is not null && worldSnapshot?.SourceKey == key && worldSnapshot.Data.PendingWorlds.Contains(selected),
             MarketAverageBasis = basis,
             Npcs = snapshot.Data.Npcs.Select(npc => new
             {

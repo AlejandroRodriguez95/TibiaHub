@@ -117,7 +117,7 @@ public sealed class NpcSellingTests
                 new([new("Rashid", [new("Golden Legs", 30000, null, true)])]));
             await store.WriteAsync(original, default);
             using var http = new HttpClient(new FailingSource());
-            var job = new NpcTradeRefreshJob(new NpcTradeSourceClient(http, options), store, options, TimeProvider.System);
+            var job = new NpcTradeRefreshJob(new NpcTradeSourceClient(http, options, app.Services.GetRequiredService<UpstreamRequestPolicy>()), store, options, TimeProvider.System);
             await Assert.ThrowsAsync<HttpRequestException>(() => job.RefreshAsync(default));
             Assert.Equal(original, await store.ReadAsync(default));
             Assert.Equal(original.UpdatedAt, await job.LastSuccessAsync(default));

@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 
-interface AccountUser { id: string; email: string; isAdmin: boolean; }
+interface AccountUser { id: string; email: string; isAdmin: boolean; defaultWorld?: string | null; worlds?: string[]; }
 const accountUrl = 'http://localhost:5267/account';
 
 @Component({
@@ -25,6 +25,8 @@ export class Account {
   protected readonly mode = signal<'login' | 'register' | 'account'>(this.route.snapshot.data['mode'] ?? 'login');
   protected readonly error = signal('');
   protected readonly message = signal('');
+  protected defaultWorld = '';
+  protected readonly savingWorld = signal(false);
   protected email = '';
   protected password = '';
 
@@ -40,7 +42,7 @@ export class Account {
     this.http.get<AccountUser>(`${accountUrl}/myaccount`, { withCredentials: true })
       .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => this.checking.set(false)))
       .subscribe({
-        next: user => this.user.set(user),
+        next: user => { this.user.set(user); this.defaultWorld = user.defaultWorld ?? ''; },
         error: (error: HttpErrorResponse) => {
           this.user.set(null);
           if (error.status !== 401) this.sessionError.set('Could not check your session. Make sure the API is running.');
@@ -66,6 +68,23 @@ export class Account {
           else {
             void this.router.navigate(['/login'], { queryParams: { registered: 'true' } });
           }
+        },
+        error: (error: HttpErrorResponse) => this.showError(error),
+      });
+  }
+
+  protected saveDefaultWorld(): void {
+    if (this.savingWorld()) return;
+    this.savingWorld.set(true);
+    this.error.set('');
+    this.message.set('');
+    this.write<{ defaultWorld: string | null }>('default-world', { world: this.defaultWorld || null })
+      .pipe(finalize(() => this.savingWorld.set(false)))
+      .subscribe({
+        next: result => {
+          this.defaultWorld = result.defaultWorld ?? '';
+          this.user.update(user => user ? { ...user, defaultWorld: result.defaultWorld } : null);
+          this.message.set('Default world saved.');
         },
         error: (error: HttpErrorResponse) => this.showError(error),
       });

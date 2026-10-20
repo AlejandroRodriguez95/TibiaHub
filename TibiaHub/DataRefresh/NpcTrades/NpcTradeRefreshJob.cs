@@ -28,8 +28,6 @@ public sealed class NpcTradeRefreshJob(
                 var canonical = await source.ValidateNpcAsync(name, token);
                 var items = WikiTradeParser.Purchases(await source.PageAsync(canonical, token), tasks);
                 npcs.Add(new(canonical, items));
-                // Public API default is 30 calls/minute; keep NPC validations below that rate.
-                await Task.Delay(TimeSpan.FromSeconds(2), clock, token);
             }
         }
         if (configuration.SourceKey != options.CurrentValue.SourceKey)

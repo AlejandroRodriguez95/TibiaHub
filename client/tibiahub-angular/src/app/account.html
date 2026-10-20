@@ -14,12 +14,23 @@
       <p>Signed in as {{ user.email }}</p>
       <dl class="character-details account-details">
         <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
-        <div><dt>User ID</dt><dd>{{ user.id }}</dd></div>
       </dl>
+      <form class="search-form account-form" (ngSubmit)="saveDefaultWorld()">
+        <label for="default-world">Preferred default world</label>
+        <select id="default-world" name="defaultWorld" [(ngModel)]="defaultWorld" [disabled]="savingWorld() || busy()">
+          <option value="">No default world</option>
+          @if (user.defaultWorld && !user.worlds?.includes(user.defaultWorld)) {
+            <option [value]="user.defaultWorld">{{ user.defaultWorld }} (currently unavailable)</option>
+          }
+          @for (world of user.worlds ?? []; track world) { <option [value]="world">{{ world }}</option> }
+        </select>
+        <p class="muted">Used automatically when comparing market prices in NPC selling.</p>
+        @if (!user.worlds?.length) { <p class="muted">The world list is being collected. Reload this page to try again.</p> }
+        <button type="submit" [disabled]="savingWorld() || busy()">{{ savingWorld() ? 'Saving...' : 'Save default world' }}</button>
+      </form>
       <div class="account-actions">
         @if (user.isAdmin) { <a routerLink="/admin">Admin panel</a> }
         <button type="button" (click)="logout()" [disabled]="busy()">{{ busy() ? 'Logging out...' : 'Log out' }}</button>
-        <a routerLink="/characters">Look up a character</a>
       </div>
     } @else {
       <p>You are already signed in as {{ user.email }}.</p>

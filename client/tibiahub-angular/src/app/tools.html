@@ -49,9 +49,9 @@
       <div class="table-scroll" tabindex="0" role="region" aria-label="NPC purchase list; scroll horizontally on small screens">
         <table class="npc-items">
           <caption class="visually-hidden">Items bought by {{ npc.name }}. All prices are per item in gold coins.</caption>
-          <thead><tr><th scope="col">Item</th><th scope="col" class="price">NPC price</th><th scope="col" class="price">Average market <span class="column-note">{{ catalog.selectedWorld || 'Choose a world' }} · monthly {{ catalog.marketAverageBasis || 'buy' }}</span></th></tr></thead>
+          <thead><tr><th scope="col" [attr.aria-sort]="deliverySort() === 'none' ? 'none' : deliverySort() === 'first' ? 'descending' : 'ascending'">Item <button class="delivery-sort" type="button" (click)="toggleDeliverySort()" [attr.aria-label]="deliverySort() === 'first' ? 'Sort non-delivery items first' : 'Sort delivery-task items first'" [attr.title]="deliverySort() === 'none' ? 'Sort by delivery task' : deliverySort() === 'first' ? 'Delivery-task items first' : 'Non-delivery items first'">Delivery task <span aria-hidden="true">{{ deliverySort() === 'none' ? '↕' : deliverySort() === 'first' ? '↓' : '↑' }}</span></button></th><th scope="col" class="price">NPC price</th><th scope="col" class="price">Average market <span class="column-note">{{ catalog.selectedWorld || 'Choose a world' }} · monthly {{ catalog.marketAverageBasis || 'buy' }}</span></th></tr></thead>
           <tbody>
-            @for (item of npc.items; track item.name) {
+            @for (item of sortedItems(); track item.name) {
               <tr [class.delivery-task]="item.isDeliveryTask">
                 <th scope="row"><div class="item-label">
                   <span class="item-icon" aria-hidden="true">

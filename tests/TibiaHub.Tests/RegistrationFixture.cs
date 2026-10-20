@@ -29,6 +29,8 @@ public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsync
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", body.GetProperty("token").GetString());
     }
 
+    private readonly string cacheDirectory = Path.Combine(Path.GetTempPath(), "tibiahub-accounts-" + Guid.NewGuid().ToString("N"));
+
     private readonly PostgreSqlContainer database = new PostgreSqlBuilder("postgres:17")
         .Build();
 
@@ -39,7 +41,8 @@ public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsync
             configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = database.GetConnectionString(),
-                ["DataRefresh:Enabled"] = "false"
+                ["DataRefresh:Enabled"] = "false",
+                ["DataRefresh:CacheDirectory"] = cacheDirectory
             }));
     }
 
@@ -54,6 +57,7 @@ public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsync
     {
         await DisposeAsync();
         await database.DisposeAsync();
+        if (Directory.Exists(cacheDirectory)) Directory.Delete(cacheDirectory, recursive: true);
     }
 
     public async Task ResetUsersAsync()

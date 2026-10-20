@@ -63,6 +63,40 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
             Assert.Equal(new[] { "id", "email" }, user.EnumerateObject().Select(property => property.Name)));
     }
 
+    [Fact]
+    public async Task Default_world_requires_login_validates_list_and_persists()
+    {
+        using var client = await fixture.CreateAccountClientAsync();
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/account/default-world", new { world = "Antica" })).StatusCode);
+        var credentials = new { Email = "world@example.com", Password = ValidPassword };
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/account/register", credentials)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/login", credentials)).StatusCode);
+        await RegistrationFixture.RefreshCsrfAsync(client);
+        var services = fixture.Services;
+        var key = services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<TibiaHub.DataRefresh.Worlds.WorldSourceOptions>>().CurrentValue.SourceKey;
+        await services.GetRequiredService<TibiaHub.DataRefresh.JsonSnapshotStore<TibiaHub.DataRefresh.Worlds.WorldList>>()
+            .WriteAsync(new(DateTimeOffset.UtcNow, key, new(["Antica", "Secura"])), default);
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/account/default-world", new { world = "Invalid" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = "antica" })).StatusCode);
+        var account = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        Assert.Equal("Antica", account.GetProperty("defaultWorld").GetString());
+        var npcKey = services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<TibiaHub.DataRefresh.NpcTrades.NpcTradeSourceOptions>>().CurrentValue.SourceKey;
+        await services.GetRequiredService<TibiaHub.DataRefresh.JsonSnapshotStore<TibiaHub.DataRefresh.NpcTrades.NpcTradeCatalog>>()
+            .WriteAsync(new(DateTimeOffset.UtcNow, npcKey, new([])), default);
+        Assert.Equal("Antica", (await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling")).GetProperty("selectedWorld").GetString());
+        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling?world=Secura")).GetProperty("selectedWorld").GetString());
+        using (var scope = services.CreateScope())
+        {
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await users.FindByEmailAsync(credentials.Email);
+            Assert.Contains(await users.GetClaimsAsync(user!), claim => claim.Type == "tibiahub:default-world" && claim.Value == "Antica");
+        }
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = "Secura" })).StatusCode);
+        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/account/myaccount")).GetProperty("defaultWorld").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = (string?)null })).StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await client.GetFromJsonAsync<JsonElement>("/account/myaccount")).GetProperty("defaultWorld").ValueKind);
+    }
+
     public Task InitializeAsync() => fixture.ResetUsersAsync();
     public Task DisposeAsync() => Task.CompletedTask;
 
