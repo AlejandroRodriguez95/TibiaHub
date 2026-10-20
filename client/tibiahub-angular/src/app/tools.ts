@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 
@@ -31,7 +31,7 @@ interface Catalog {
 
 @Component({
   selector: 'app-tools',
-  imports: [FormsModule, DatePipe, DecimalPipe],
+  imports: [FormsModule, DecimalPipe],
   templateUrl: './tools.html',
 })
 export class Tools implements OnDestroy {
@@ -77,6 +77,14 @@ export class Tools implements OnDestroy {
     this.catalog.update(catalog => catalog ? { ...catalog, selectedWorld: null, marketAvailable: false,
       npcs: catalog.npcs.map(npc => ({ ...npc, items: npc.items.map(item => ({ ...item, averageMarketValue: null, isMarketHigher: false, marketSourceUpdatedAt: null })) })) } : null);
     this.load();
+  }
+
+  protected daysAgo(value: string | null): string {
+    if (!value) return 'unknown';
+    const timestamp = Date.parse(value);
+    if (!Number.isFinite(timestamp)) return 'unknown';
+    const days = Math.max(0, Math.floor((Date.now() - timestamp) / 86_400_000));
+    return days + (days === 1 ? ' day ago' : ' days ago');
   }
 
   protected iconFailed(name: string): void {

@@ -26,7 +26,7 @@
           @for (world of catalog.worlds; track world) { <option [value]="world">{{ world }}</option> }
         </select>
       </div>
-      <p class="muted refresh-time">Updated {{ catalog.updatedAt | date:'medium' }} <span class="time-note">(your local time)</span></p>
+      <p class="muted refresh-time">Updated {{ daysAgo(catalog.updatedAt) }}</p>
     </div>
     @if (catalog.isStale) { <p class="message stale-notice" role="status">These prices are more than 25 hours old. Showing the last successful collection while the collector retries.</p> }
     <div class="market-note" aria-live="polite">
@@ -34,8 +34,8 @@
       @else if (!selectedWorld()) { <p>Choose a world to compare NPC prices with its monthly market averages.</p> }
       @else if (loading()) { <p>Loading cached prices for {{ selectedWorld() }}…</p> }
       @else if (catalog.marketAvailable) {
-        <p><strong>{{ catalog.selectedWorld }}</strong> · Monthly {{ catalog.marketAverageBasis }} average · Collected {{ catalog.marketUpdatedAt | date:'medium' }}.</p>
-        @if (catalog.marketIsStale) { <p class="stale-notice">Some market data is older than 25 hours. Oldest source scan: {{ catalog.marketSourceOldestAt | date:'medium' }}. Collection time does not mean the provider scanned prices today.</p> }
+        <p><strong>{{ catalog.selectedWorld }}</strong> · Monthly {{ catalog.marketAverageBasis }} average · Collected {{ daysAgo(catalog.marketUpdatedAt) }}.</p>
+        @if (catalog.marketIsStale) { <p class="stale-notice">Some market data is older than 25 hours. Oldest source scan: {{ daysAgo(catalog.marketSourceOldestAt) }}. Collection time does not mean the provider scanned prices today.</p> }
         @if (catalog.marketRefreshPending) { <p>A refresh is pending; showing the last complete prices for this world.</p> }
       } @else { <p>Market prices for {{ selectedWorld() }} are not available yet. Retry after collection completes.</p> }
       <p>“Unavailable” means no matched monthly trading average was returned. Historical averages are before market fees.</p>
@@ -45,7 +45,7 @@
       <p class="message muted">No NPCs have been configured yet.</p>
     } @else if (selectedNpc(); as npc) {
       <div class="tool-results-heading"><h2>{{ npc.name }} buys</h2><p class="muted">{{ npc.items.length | number }} items</p></div>
-      <div class="comparison-legends"><p class="task-legend"><span class="task-key" aria-hidden="true"></span> Delivery-task item</p><p class="task-legend"><span class="market-key" aria-hidden="true"></span> Market average above NPC price</p></div>
+      <div class="comparison-legends"><p class="task-legend"><span class="task-key" aria-hidden="true"></span> Delivery-task item</p><p class="task-legend"><span class="market-key" aria-hidden="true"></span> Green: above NPC price; red: below NPC price</p></div>
       <div class="table-scroll" tabindex="0" role="region" aria-label="NPC purchase list; scroll horizontally on small screens">
         <table class="npc-items">
           <caption class="visually-hidden">Items bought by {{ npc.name }}. All prices are per item in gold coins.</caption>
@@ -61,11 +61,10 @@
                   <span>{{ item.name }} @if (item.isDeliveryTask) { <span class="task-badge">Delivery task</span> }</span>
                 </div></th>
                 <td class="price">{{ item.npcPrice | number }} <span class="coin-unit">gp</span></td>
-                <td class="price" [class.market-higher]="item.isMarketHigher">
-                  @if (item.averageMarketValue !== null) { {{ item.averageMarketValue | number }} <span class="coin-unit">gp</span> }
+                <td class="price">
+                  @if (item.averageMarketValue !== null) { <span [class.market-higher]="item.averageMarketValue > item.npcPrice" [class.market-lower]="item.averageMarketValue < item.npcPrice">{{ item.averageMarketValue | number }} <span class="coin-unit">gp</span></span> }
                   @else { <span class="muted">Unavailable</span> }
-                  @if (item.isMarketHigher) { <span class="market-badge">Above NPC</span> }
-                  @if (item.marketSourceUpdatedAt) { <span class="column-note muted">Scanned {{ item.marketSourceUpdatedAt | date:'shortDate' }}</span> }
+                  @if (item.marketSourceUpdatedAt) { <span class="column-note muted">Updated {{ daysAgo(item.marketSourceUpdatedAt) }}</span> }
                 </td>
               </tr>
             } @empty { <tr><td colspan="3">No purchase items are available for this NPC.</td></tr> }
