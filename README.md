@@ -67,6 +67,8 @@ retaining the last complete snapshot across failures and restarts. Independently
 See [the roadmap](docs/ROADMAP.MD), [current next steps](docs/TODO.md), and
 [authentication details](docs/AUTHENTICATION.md).
 
+Character timing scans are available under **Tools > Character scan** (`/tools/character-scan`) for signed-in accounts. The collector monitors all active worlds and stores 14 days of observed sessions in PostgreSQL. Apply the new migration before restarting the backend. See [character scans](docs/features/CHARACTER_SCANS.md) for scoring, exclusions, retention, and configuration.
+
 ## Running Locally
 
 Start Docker Desktop with Linux containers, then run:

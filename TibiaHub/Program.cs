@@ -9,6 +9,7 @@ using TibiaHub.DataRefresh;
 using TibiaHub.DataRefresh.NpcTrades;
 using TibiaHub.DataRefresh.Market;
 using TibiaHub.DataRefresh.Worlds;
+using TibiaHub.CharacterScanning;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("DataRefresh/refresh-sources.json", optional: false, reloadOnChange: true);
@@ -43,6 +44,30 @@ builder.Services.AddHttpClient<NpcTradeSourceClient>(client =>
 }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
 builder.Services.AddSingleton<IRefreshJob, NpcTradeRefreshJob>();
 builder.Services.AddHostedService<RefreshCoordinator>();
+builder.Services.AddOptions<CharacterScanOptions>().Bind(builder.Configuration.GetSection("CharacterScan"))
+    .Validate(o => o.PollSeconds >= 60 && o.PollSeconds <= o.MaximumGapSeconds && o.MaximumGapSeconds >= 60 && o.MaximumGapSeconds <= 120
+        && o.MassChangeMinimum > 0 && o.MassChangeFraction > 0 && o.MassChangeFraction <= 1,
+        "Character scan intervals and mass-change thresholds are invalid.")
+    .Validate(o =>
+    {
+        try
+        {
+            _ = TimeZoneInfo.FindSystemTimeZoneById(o.ServerSaveTimeZone);
+            return TimeOnly.TryParseExact(o.ServerSaveStart, "HH:mm", out var start)
+                && TimeOnly.TryParseExact(o.ServerSaveEnd, "HH:mm", out var end) && start < end;
+        }
+        catch (TimeZoneNotFoundException) { return false; }
+        catch (InvalidTimeZoneException) { return false; }
+    }, "Configure a valid server-save time zone and a same-day HH:mm exclusion window.")
+    .ValidateOnStart();
+builder.Services.AddHttpClient<OnlineWorldClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("TibiaHub/0.1 (online session collector)");
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddScoped<SessionRecorder>();
+builder.Services.AddScoped<CharacterScanService>();
+builder.Services.AddHostedService<OnlineCollector>();
 
 // The MVC antiforgery validation filter requires the view-feature services.
 builder.Services.AddControllersWithViews(options =>

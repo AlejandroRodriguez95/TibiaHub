@@ -14,8 +14,30 @@ describe('App navigation', () => {
   it('links to home, lookup, and account pages', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
-    const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('nav a')];
-    expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/characters', '/tools', '/login', '/account']);
+    const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll('nav > a')];
+    expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/characters', '/login', '/account']);
+  });
+
+  it('groups both tools in a dropdown that closes with Escape and outside clicks', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const element = fixture.nativeElement as HTMLElement;
+    const toggle = element.querySelector<HTMLButtonElement>('.tools-toggle')!;
+    const menu = element.querySelector<HTMLElement>('#tools-links')!;
+    expect(menu.hidden).toBe(true);
+    toggle.click();
+    fixture.detectChanges();
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.hidden).toBe(false);
+    expect([...menu.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual(['/tools/npc-selling', '/tools/character-scan']);
+    toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    fixture.detectChanges();
+    expect(menu.hidden).toBe(true);
+    toggle.click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(menu.hidden).toBe(true);
   });
 
   it('shows the landing page at home', async () => {

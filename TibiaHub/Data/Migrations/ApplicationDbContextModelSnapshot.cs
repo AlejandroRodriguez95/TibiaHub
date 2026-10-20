@@ -154,6 +154,125 @@ namespace TibiaHub.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("TibiaHub.CharacterScanning.OnlineSession", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<long>("CharacterId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("LoginAfter")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("LoginAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("LoginReliable")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset?>("LogoutAfter")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("LogoutAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("logout_at");
+
+                    b.Property<bool>("LogoutReliable")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CharacterId")
+                        .IsUnique()
+                        .HasFilter("logout_at IS NULL");
+
+                    b.HasIndex("LogoutAt");
+
+                    b.HasIndex("CharacterId", "LoginAt");
+
+                    b.HasIndex("LoginAt", "CharacterId");
+
+                    b.ToTable("OnlineSessions");
+                });
+
+            modelBuilder.Entity("TibiaHub.CharacterScanning.ScannedCharacter", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("World")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("World", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("ScannedCharacters");
+                });
+
+            modelBuilder.Entity("TibiaHub.CharacterScanning.WorldObservation", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Exclusion")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<DateTimeOffset>("FetchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OnlineCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("SourceAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SourceKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("World")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FetchedAt");
+
+                    b.HasIndex("World", "FetchedAt");
+
+                    b.HasIndex("World", "SourceAt");
+
+                    b.ToTable("WorldObservations");
+                });
+
             modelBuilder.Entity("TibiaHub.Identity.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -267,6 +386,17 @@ namespace TibiaHub.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TibiaHub.CharacterScanning.OnlineSession", b =>
+                {
+                    b.HasOne("TibiaHub.CharacterScanning.ScannedCharacter", "Character")
+                        .WithMany()
+                        .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Character");
                 });
 #pragma warning restore 612, 618
         }

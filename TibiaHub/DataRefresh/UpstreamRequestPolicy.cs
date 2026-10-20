@@ -36,7 +36,10 @@ public sealed class UpstreamRequestPolicy(TimeProvider clock, IOptionsMonitor<Ma
                 token.ThrowIfCancellationRequested();
                 var interval = uri.IdnHost.Equals(new Uri(marketOptions.CurrentValue.BaseUrl).IdnHost, StringComparison.OrdinalIgnoreCase)
                     ? TimeSpan.FromSeconds(Math.Max(6, marketOptions.CurrentValue.RequestIntervalSeconds))
-                    : TimeSpan.FromSeconds(2.1);
+                    // Production TibiaData publishes no requests/second quota. Stagger its
+                    // all-world observations; wiki hosts retain their stricter shared budget.
+                    : uri.IdnHost.Equals("api.tibiadata.com", StringComparison.OrdinalIgnoreCase)
+                        ? TimeSpan.FromMilliseconds(250) : TimeSpan.FromSeconds(2.1);
                 state.NextRequest = clock.GetUtcNow() + interval;
                 var response = await client.GetAsync(uri, token);
                 var retryable = response.StatusCode == HttpStatusCode.TooManyRequests || (int)response.StatusCode is >= 500 and <= 599;

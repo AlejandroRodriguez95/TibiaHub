@@ -1,0 +1,42 @@
+<section class="lookup-panel" aria-labelledby="scan-title" [attr.aria-busy]="busy()">
+  <header class="page-header">
+    <p class="eyebrow">Tools / Character scan</p>
+    <h1 id="scan-title">Follow the timing.</h1>
+    <p class="intro">Compare a character's observed logouts with other characters appearing online on the same world, using up to 14 days of history.</p>
+  </header>
+  <p class="message muted">First minute: +10 points. Second minute: +5 points. Each candidate scores once per logout. Monitoring gaps, server-save windows, and mass disconnects or reconnects are excluded.</p>
+  @if (error()) { <p class="message error" role="alert">{{ error() }}</p> }
+  @if (needsLogin()) { <a routerLink="/login">Log in</a> }
+
+  @if (!needsLogin()) {
+    <form class="search-form account-form" #form="ngForm" (ngSubmit)="form.valid && scan()">
+      <p class="muted">The character's most recently monitored world is selected automatically.</p>
+      <label for="scan-name">Character name</label>
+      <input id="scan-name" name="name" required maxlength="100" [(ngModel)]="name" [disabled]="busy()" (ngModelChange)="result.set(null)" autocomplete="off" />
+      <button type="submit" [disabled]="form.invalid || !name.trim() || busy()">{{ busy() ? 'Scanning...' : 'Scan character' }}</button>
+    </form>
+  }
+  @if (result(); as scan) {
+    <section class="scan-results" aria-labelledby="scan-results-title" aria-live="polite">
+      <h2 id="scan-results-title">{{ scan.character }} / {{ scan.world }}</h2>
+      <p class="message">{{ scan.usableLogouts }} usable logouts out of {{ scan.observedLogouts }} observed in the last 14 days.</p>
+      @if (scan.historyStart) { <p class="muted">Available history: {{ scan.historyStart | date:'medium' }} to {{ scan.lastObservation | date:'medium' }} (your local time).</p> }
+      <p class="message muted">Scores describe timing matches, not proof of shared ownership. Times are observation boundaries, not exact login or logout times. The newest logout needs two minutes of valid follow-up observations before it can be scored.</p>
+      @if (!scan.observedLogouts) { <p class="message" role="status">No logouts recorded for this character in the retained history. Monitoring must observe the character online and then offline.</p> }
+      @else if (!scan.usableLogouts) { <p class="message" role="status">There are no complete, reliable matching windows yet.</p> }
+      @else if (!scan.candidates.length) { <p class="message" role="status">No matching character logins were observed.</p> }
+      @else {
+        <div class="table-scroll" tabindex="0" role="region" aria-label="Character timing matches">
+          <table class="npc-items">
+            <caption class="visually-hidden">Same-world candidates ranked by timing score</caption>
+            <thead><tr><th scope="col">Character</th><th scope="col" class="price">Score</th><th scope="col" class="price">First minute (+10)</th><th scope="col" class="price">Second minute (+5)</th></tr></thead>
+            <tbody>@for (candidate of scan.candidates; track candidate.name) {
+              <tr><th scope="row">{{ candidate.name }}</th><td class="price">{{ candidate.score }}</td><td class="price">{{ candidate.firstMinuteMatches }}</td><td class="price">{{ candidate.secondMinuteMatches }}</td></tr>
+            }</tbody>
+          </table>
+        </div>
+      }
+    </section>
+  }
+  <footer class="source-note">Online observations: <a href="https://tibiadata.com/" target="_blank" rel="noopener noreferrer">TibiaData</a>. Scans use stored history. Cross-world matching is not available.</footer>
+</section>

@@ -38,5 +38,15 @@
   },
   "WorldSource": {
     "Url": "https://tibiawiki.dev/api/worlds"
+  },
+  "CharacterScan": {
+    "Enabled": true,
+    "PollSeconds": 60,
+    "MaximumGapSeconds": 90,
+    "MassChangeMinimum": 20,
+    "MassChangeFraction": 0.4,
+    "ServerSaveTimeZone": "Europe/Berlin",
+    "ServerSaveStart": "09:55",
+    "ServerSaveEnd": "10:15"
   }
 }
