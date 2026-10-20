@@ -1,0 +1,85 @@
+import { HttpClient } from '@angular/common/http';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
+
+interface PurchaseItem {
+  name: string;
+  npcPrice: number;
+  averageMarketValue: number | null;
+  isMarketHigher: boolean;
+  marketSourceUpdatedAt: string | null;
+  iconUrl: string | null;
+  isDeliveryTask: boolean;
+}
+interface NpcPurchases { name: string; items: PurchaseItem[]; }
+interface Catalog {
+  updatedAt: string;
+  isStale: boolean;
+  marketValuesArePlaceholders: boolean;
+  worlds: string[];
+  selectedWorld: string | null;
+  marketAvailable: boolean;
+  marketUpdatedAt: string | null;
+  marketSourceOldestAt: string | null;
+  marketIsStale: boolean;
+  marketRefreshPending: boolean;
+  marketAverageBasis: 'buy' | 'sell';
+  npcs: NpcPurchases[];
+}
+
+@Component({
+  selector: 'app-tools',
+  imports: [FormsModule, DatePipe, DecimalPipe],
+  templateUrl: './tools.html',
+})
+export class Tools implements OnDestroy {
+  private readonly http = inject(HttpClient);
+  private request?: Subscription;
+  protected readonly catalog = signal<Catalog | null>(null);
+  protected readonly selectedName = signal('');
+  protected readonly selectedWorld = signal('');
+  protected readonly loading = signal(false);
+  protected readonly error = signal('');
+  protected readonly brokenIcons = signal(new Set<string>());
+  protected readonly selectedNpc = computed(() => this.catalog()?.npcs.find(n => n.name === this.selectedName()));
+
+  constructor() { this.load(); }
+  ngOnDestroy(): void { this.request?.unsubscribe(); }
+
+  protected load(): void {
+    if (this.loading()) return;
+    this.loading.set(true);
+    this.error.set('');
+    const world = this.selectedWorld();
+    this.request = this.http.get<Catalog>('http://localhost:5267/tools/npc-selling', {
+      params: world ? { world } : {},
+    }).subscribe({
+      next: catalog => {
+        this.catalog.set(catalog);
+        this.selectedWorld.set(catalog.selectedWorld ?? '');
+        if (!catalog.npcs.some(n => n.name === this.selectedName())) this.selectedName.set('');
+        this.loading.set(false);
+      },
+      error: response => {
+        this.error.set(response.status === 503
+          ? 'NPC prices are not available yet. The collector is fetching data or waiting to retry. Try again shortly.'
+          : 'We could not load NPC prices. Please try again.');
+        this.loading.set(false);
+      },
+    });
+  }
+
+  protected changeWorld(world: string): void {
+    this.selectedWorld.set(world);
+    // Clear the old world's prices immediately, including during failed requests.
+    this.catalog.update(catalog => catalog ? { ...catalog, selectedWorld: null, marketAvailable: false,
+      npcs: catalog.npcs.map(npc => ({ ...npc, items: npc.items.map(item => ({ ...item, averageMarketValue: null, isMarketHigher: false, marketSourceUpdatedAt: null })) })) } : null);
+    this.load();
+  }
+
+  protected iconFailed(name: string): void {
+    this.brokenIcons.update(current => new Set([...current, name]));
+  }
+}

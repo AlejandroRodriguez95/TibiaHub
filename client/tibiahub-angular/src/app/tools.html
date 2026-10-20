@@ -1,0 +1,80 @@
+<section class="lookup-panel tools-panel" aria-labelledby="tools-title" [attr.aria-busy]="loading()">
+  <header class="page-header">
+    <p class="eyebrow">Tools / NPC selling</p>
+    <h1 id="tools-title">Before you sell.</h1>
+    <p class="intro">See what an NPC pays for your items, and spot the ones used in delivery tasks.</p>
+  </header>
+
+  @if (loading()) { <p class="message muted" role="status">Loading NPC prices…</p> }
+  @if (error()) {
+    <p class="message error" role="alert">{{ error() }}</p>
+    <button class="retry-button" type="button" (click)="load()" [disabled]="loading()">Try again</button>
+  }
+  @if (catalog(); as catalog) {
+    <div class="tool-controls">
+      <div class="npc-picker">
+        <label for="npc-select">Sell to NPC</label>
+        <select id="npc-select" [ngModel]="selectedName()" (ngModelChange)="selectedName.set($event)" [disabled]="loading() || catalog.npcs.length === 0">
+          <option value="">Choose an NPC</option>
+          @for (npc of catalog.npcs; track npc.name) { <option [value]="npc.name">{{ npc.name }}</option> }
+        </select>
+      </div>
+      <div class="npc-picker">
+        <label for="world-select">Market world</label>
+        <select id="world-select" [ngModel]="selectedWorld()" (ngModelChange)="changeWorld($event)" [disabled]="loading() || !catalog.worlds?.length">
+          <option value="">Choose a world</option>
+          @for (world of catalog.worlds; track world) { <option [value]="world">{{ world }}</option> }
+        </select>
+      </div>
+      <p class="muted refresh-time">Updated {{ catalog.updatedAt | date:'medium' }} <span class="time-note">(your local time)</span></p>
+    </div>
+    @if (catalog.isStale) { <p class="message stale-notice" role="status">These prices are more than 25 hours old. Showing the last successful collection while the collector retries.</p> }
+    <div class="market-note" aria-live="polite">
+      @if (!catalog.worlds?.length) { <p>The market world list is being collected. You can still browse NPC prices.</p> }
+      @else if (!selectedWorld()) { <p>Choose a world to compare NPC prices with its monthly market averages.</p> }
+      @else if (loading()) { <p>Loading cached prices for {{ selectedWorld() }}…</p> }
+      @else if (catalog.marketAvailable) {
+        <p><strong>{{ catalog.selectedWorld }}</strong> · Monthly {{ catalog.marketAverageBasis }} average · Collected {{ catalog.marketUpdatedAt | date:'medium' }}.</p>
+        @if (catalog.marketIsStale) { <p class="stale-notice">Some market data is older than 25 hours. Oldest source scan: {{ catalog.marketSourceOldestAt | date:'medium' }}. Collection time does not mean the provider scanned prices today.</p> }
+        @if (catalog.marketRefreshPending) { <p>A refresh is pending; showing the last complete prices for this world.</p> }
+      } @else { <p>Market prices for {{ selectedWorld() }} are not available yet. Retry after collection completes.</p> }
+      <p>“Unavailable” means no matched monthly trading average was returned. Historical averages are before market fees.</p>
+      <button class="secondary-button retry-button" type="button" (click)="load()" [disabled]="loading()">Reload cached data</button>
+    </div>
+    @if (catalog.npcs.length === 0) {
+      <p class="message muted">No NPCs have been configured yet.</p>
+    } @else if (selectedNpc(); as npc) {
+      <div class="tool-results-heading"><h2>{{ npc.name }} buys</h2><p class="muted">{{ npc.items.length | number }} items</p></div>
+      <div class="comparison-legends"><p class="task-legend"><span class="task-key" aria-hidden="true"></span> Delivery-task item</p><p class="task-legend"><span class="market-key" aria-hidden="true"></span> Market average above NPC price</p></div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="NPC purchase list; scroll horizontally on small screens">
+        <table class="npc-items">
+          <caption class="visually-hidden">Items bought by {{ npc.name }}. All prices are per item in gold coins.</caption>
+          <thead><tr><th scope="col">Item</th><th scope="col" class="price">NPC price</th><th scope="col" class="price">Average market <span class="column-note">{{ catalog.selectedWorld || 'Choose a world' }} · monthly {{ catalog.marketAverageBasis || 'buy' }}</span></th></tr></thead>
+          <tbody>
+            @for (item of npc.items; track item.name) {
+              <tr [class.delivery-task]="item.isDeliveryTask">
+                <th scope="row"><div class="item-label">
+                  <span class="item-icon" aria-hidden="true">
+                    @if (item.iconUrl && !brokenIcons().has(item.name)) { <img [src]="item.iconUrl" alt="" width="32" height="32" loading="lazy" referrerpolicy="no-referrer" (error)="iconFailed(item.name)" /> }
+                    @else { <span>◇</span> }
+                  </span>
+                  <span>{{ item.name }} @if (item.isDeliveryTask) { <span class="task-badge">Delivery task</span> }</span>
+                </div></th>
+                <td class="price">{{ item.npcPrice | number }} <span class="coin-unit">gp</span></td>
+                <td class="price" [class.market-higher]="item.isMarketHigher">
+                  @if (item.averageMarketValue !== null) { {{ item.averageMarketValue | number }} <span class="coin-unit">gp</span> }
+                  @else { <span class="muted">Unavailable</span> }
+                  @if (item.isMarketHigher) { <span class="market-badge">Above NPC</span> }
+                  @if (item.marketSourceUpdatedAt) { <span class="column-note muted">Scanned {{ item.marketSourceUpdatedAt | date:'shortDate' }}</span> }
+                </td>
+              </tr>
+            } @empty { <tr><td colspan="3">No purchase items are available for this NPC.</td></tr> }
+          </tbody>
+        </table>
+      </div>
+    } @else {
+      <div class="tool-empty"><span aria-hidden="true">⌕</span><h2>Pick your merchant.</h2><p class="muted">Choose an NPC above to see the items they buy.</p></div>
+    }
+  }
+  <footer class="source-note">Trade and delivery-task data: <a href="https://tibia.fandom.com/wiki/Delivery_Task" target="_blank" rel="noopener noreferrer">TibiaWiki</a> (CC BY-SA). Worlds and NPC names: <a href="https://tibiawiki.dev/swagger-ui/index.html" target="_blank" rel="noopener noreferrer">TibiaWiki API</a>. Market data: <a href="https://api.tibiamarket.top:8001/docs" target="_blank" rel="noopener noreferrer">TibiaMarket</a>. Access requirements may apply when trading in game.</footer>
+</section>
