@@ -3,7 +3,7 @@
     <div class="page-header">
       <p class="eyebrow">TibiaHub</p>
       <h1 id="page-title">Character lookup</h1>
-      <p class="intro">Search a Tibia character and view the first profile fields from the TibiaHub API.</p>
+      <p class="intro">Find characters across Tibia worlds. A closer look at every adventure.</p>
     </div>
 
     <form class="search-form" (ngSubmit)="searchCharacter()">
@@ -16,7 +16,8 @@
           [ngModel]="characterName()"
           (ngModelChange)="updateCharacterName($event)"
           autocomplete="off"
-          placeholder="Trollefar"
+          placeholder="Enter character name…"
+          [disabled]="isLoading()"
         />
         <button type="submit" [disabled]="isLoading()">
           {{ isLoading() ? 'Searching...' : 'Search' }}
@@ -25,9 +26,10 @@
     </form>
 
     @if (errorMessage()) {
-      <p class="message error">{{ errorMessage() }}</p>
+      <p class="message error" role="alert">{{ errorMessage() }}</p>
     }
 
+    @if (isLoading()) { <p class="message muted" role="status">Searching for your character…</p> }
     @if (character(); as character) {
       <section class="character-result" aria-label="Character result">
         <div class="character-heading">

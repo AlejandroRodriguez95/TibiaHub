@@ -24,7 +24,10 @@ public sealed class AccountController(
     public async Task<IResult> MyAccount()
     {
         var user = await userManager.GetUserAsync(User);
-        return user is null ? Results.Unauthorized() : Results.Ok(new { user.Id, user.Email });
+        return user is null ? Results.Unauthorized() : Results.Ok(new
+        {
+            user.Id, user.Email, IsAdmin = User.IsInRole(ApplicationRoles.Admin)
+        });
     }
 
     [Authorize]
@@ -49,7 +52,7 @@ public sealed class AccountController(
             user, request.Password, isPersistent: false, lockoutOnFailure: true);
 
         return result.Succeeded
-            ? Results.Ok(new { user.Id, user.Email })
+            ? Results.Ok(new { user.Id, user.Email, IsAdmin = await userManager.IsInRoleAsync(user, ApplicationRoles.Admin) })
             : Results.Unauthorized();
     }
 

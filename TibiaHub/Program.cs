@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using TibiaHub.Commands;
 using TibiaHub.Data;
 using TibiaHub.External.TibiaData;
 using TibiaHub.Identity;
@@ -25,6 +26,7 @@ builder.Services
     {
         options.User.RequireUniqueEmail = true;
     })
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
@@ -33,6 +35,7 @@ builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
     .AddIdentityCookies();
 
 builder.Services.AddAuthorization();
+builder.Services.AddScoped<GrantAdminCommand>();
 builder.Services.AddAntiforgery(options => options.HeaderName = "X-CSRF-TOKEN");
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -79,6 +82,11 @@ builder.Services.AddHttpClient<TibiaDataClient>((serviceProvider, client) =>
 });
 
 var app = builder.Build();
+
+if (await CommandHandler.HandleAsync(app.Services, args))
+{
+    return;
+}
 
 if (app.Environment.IsDevelopment())
 {

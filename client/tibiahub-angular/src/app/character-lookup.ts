@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 
@@ -29,19 +30,29 @@ interface CharacterDetails {
   
   templateUrl: './character-lookup.html',
 })
-export class CharacterLookup {
+export class CharacterLookup implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly route = inject(ActivatedRoute);
 
-  protected readonly characterName = signal('Trollefar');
+  protected readonly characterName = signal('');
   protected readonly character = signal<CharacterDetails | null>(null);
   protected readonly errorMessage = signal('');
   protected readonly isLoading = signal(false);
+
+  ngOnInit(): void {
+    const name = this.route.snapshot.queryParamMap.get('name')?.trim();
+    if (name) {
+      this.characterName.set(name);
+      this.searchCharacter();
+    }
+  }
 
   protected readonly hasSearched = computed(() =>
     this.character() !== null || this.errorMessage().length > 0
   );
 
   protected searchCharacter(): void {
+    if (this.isLoading()) return;
     const name = this.characterName().trim();
 
     if (!name) {

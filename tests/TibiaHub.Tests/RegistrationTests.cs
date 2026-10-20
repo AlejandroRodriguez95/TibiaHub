@@ -13,6 +13,56 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
 {
     private const string ValidPassword = "ValidPassword123!";
 
+    [Fact]
+    public async Task User_list_requires_admin_and_returns_only_public_projection()
+    {
+        using var client = await fixture.CreateAccountClientAsync();
+        using var anonymous = await client.GetAsync("/admin/users");
+        Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
+        Assert.Null(anonymous.Headers.Location);
+
+        var credentials = new { Email = "admin@example.com", Password = ValidPassword };
+        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
+        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+        var regular = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        Assert.False(regular.GetProperty("isAdmin").GetBoolean());
+        using var forbidden = await client.GetAsync("/admin/users");
+        Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
+        Assert.Null(forbidden.Headers.Location);
+
+        using (var scope = fixture.Services.CreateScope())
+        {
+            var roles = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+            if (!await roles.RoleExistsAsync(ApplicationRoles.Admin))
+                Assert.True((await roles.CreateAsync(new IdentityRole(ApplicationRoles.Admin))).Succeeded);
+            var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+            var user = await users.FindByEmailAsync(credentials.Email);
+            Assert.True((await users.AddToRoleAsync(user!, ApplicationRoles.Admin)).Succeeded);
+            Assert.True((await users.CreateAsync(new ApplicationUser
+            {
+                UserName = "player@example.com", Email = "player@example.com"
+            }, ValidPassword)).Succeeded);
+        }
+
+        // Existing cookies keep their claims until the user signs in again.
+        await RegistrationFixture.RefreshCsrfAsync(client);
+        using var adminLogin = await client.PostAsJsonAsync("/account/login", credentials);
+        Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
+        var me = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        Assert.True(me.GetProperty("isAdmin").GetBoolean());
+        using var response = await client.GetAsync("/admin/users");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(2, body.GetArrayLength());
+        Assert.Equal(new[] { "admin@example.com", "player@example.com" },
+            body.EnumerateArray().Select(user => user.GetProperty("email").GetString()));
+        Assert.All(body.EnumerateArray(), user =>
+            Assert.Equal(new[] { "id", "email" }, user.EnumerateObject().Select(property => property.Name)));
+    }
+
     public Task InitializeAsync() => fixture.ResetUsersAsync();
     public Task DisposeAsync() => Task.CompletedTask;
 

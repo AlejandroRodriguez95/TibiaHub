@@ -18,7 +18,7 @@ The browser stores the HttpOnly authentication cookie; Angular does not store cr
 
 ## Local Development
 
-Angular routes: `/` for character lookup, `/login` for login, `/register` for registration,
+Angular routes: `/` for the landing page, `/characters` for character lookup, `/login` for login, `/register` for registration,
 and `/account` for the signed-in user's email, ID, and logout action. Anonymous visitors
 to `/account` see links to log in or register. The API remains responsible for enforcing
 authentication. Registration leads to login; login opens the account page; logout

@@ -84,6 +84,26 @@ Use Node.js 22.22.3+, 24.15.0+, or another version supported by Angular 22.
 Configure `ConnectionStrings:DefaultConnection` for your local PostgreSQL instance;
 keep real credentials outside source control.
 
+## Admin panel
+
+Register an account normally, then grant it the Identity `Admin` role from a trusted
+terminal with access to the application's database:
+
+```powershell
+dotnet run --project TibiaHub -- --grant-admin "your-email@example.com"
+```
+
+The command updates an existing account and exits without starting the server.
+It uses the same connection configuration as the application; apply migrations first.
+Log out and back in after granting access, then open **My account → Admin panel**
+or `http://localhost:4200/admin`.
+
+`GET /admin/users` returns registered user IDs and emails, ordered by email.
+Anonymous requests receive 401; signed-in users without the `Admin` role receive 403.
+Registration cannot assign roles. Identity role tables already exist in the initial
+migration, so this feature needs no new migration. The panel displays email only;
+extend `AdminUserResponse` and the Angular table when adding more profile fields.
+
 ## Backend Tests
 
 Start Docker Desktop (using Linux containers), then run:

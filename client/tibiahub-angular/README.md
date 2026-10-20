@@ -62,7 +62,10 @@ For more information on using the Angular CLI, including detailed command refere
 
 The frontend has separate `/login`, `/register`, and `/account` pages with shared
 navigation. `/account` shows the signed-in user's email and ID and provides logout.
-Character lookup remains at `/`. Account pages restore the session on entry.
+The Petrol & Lantern landing page is at `/`; character lookup is at `/characters`.
+The home search hands a name to `/characters?name=...` and runs the lookup.
+Account pages restore the session on entry. Design rules are in
+[FRONTEND_DESIGN.md](../../docs/FRONTEND_DESIGN.md).
 Start the API with `dotnet run --project TibiaHub --launch-profile http` from the
 repository root. Account requests use `http://localhost:5267/account` with
 `withCredentials: true`; use `http://localhost:4200` for the Angular origin.

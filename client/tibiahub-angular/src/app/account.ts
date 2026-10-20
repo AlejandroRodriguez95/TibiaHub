@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 
-interface AccountUser { id: string; email: string; }
+interface AccountUser { id: string; email: string; isAdmin: boolean; }
 const accountUrl = 'http://localhost:5267/account';
 
 @Component({
