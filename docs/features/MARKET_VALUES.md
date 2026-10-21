@@ -32,7 +32,7 @@ If the selected average is **strictly greater** than the NPC purchase price, the
 
 `MarketUpdatedAt` is our collection time. Each item also retains the provider's Unix `time` as `MarketSourceUpdatedAt`; this can be much older. The UI shows row scan dates and warns if the oldest source scan or local collection is over 25 hours old. A daily collection must not be represented as a fresh provider scan. Pending refreshes are identified while last-good data remains available.
 
-Storage remains JSON files under `TibiaHub/App_Data/refresh`, **not PostgreSQL**:
+Storage remains JSON files under `TibiaIntel/App_Data/refresh`, **not PostgreSQL**:
 
 - `WorldList.json`: shared world directory, refreshed independently.
 - `MarketWorldList.json`: market-supported worlds, advertised scan timestamps, and pending-cycle progress.

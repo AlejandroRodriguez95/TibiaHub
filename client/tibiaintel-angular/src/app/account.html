@@ -1,0 +1,65 @@
+<section class="lookup-panel" aria-labelledby="account-title">
+  <header class="page-header">
+    <p class="eyebrow">TibiaIntel account</p>
+    <h1 id="account-title">{{ mode() === 'account' ? 'My account' : mode() === 'register' ? 'Create an account' : 'Welcome back' }}</h1>
+    <p class="intro">{{ mode() === 'account' ? 'View your account details and manage your session.' : mode() === 'register' ? 'Join TibiaIntel with your email and a password.' : 'Log in to your TibiaIntel account.' }}</p>
+  </header>
+  @if (checking()) {
+    <p role="status">Checking your session...</p>
+  } @else if (sessionError()) {
+    <p class="message error" role="alert">{{ sessionError() }}</p>
+    <button type="button" (click)="loadSession()">Retry</button>
+  } @else if (user(); as user) {
+    @if (mode() === 'account') {
+      <p>Signed in as {{ user.email }}</p>
+      <dl class="character-details account-details">
+        <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+      </dl>
+      <form class="search-form account-form" (ngSubmit)="saveDefaultWorld()">
+        <label for="default-world">Preferred default world</label>
+        <select id="default-world" name="defaultWorld" [(ngModel)]="defaultWorld" [disabled]="savingWorld() || busy()">
+          <option value="">No default world</option>
+          @if (user.defaultWorld && !user.worlds?.includes(user.defaultWorld)) {
+            <option [value]="user.defaultWorld">{{ user.defaultWorld }} (currently unavailable)</option>
+          }
+          @for (world of user.worlds ?? []; track world) { <option [value]="world">{{ world }}</option> }
+        </select>
+        <p class="muted">Used automatically when comparing market prices in NPC selling.</p>
+        @if (!user.worlds?.length) { <p class="muted">The world list is being collected. Reload this page to try again.</p> }
+        <button type="submit" [disabled]="savingWorld() || busy()">{{ savingWorld() ? 'Saving...' : 'Save default world' }}</button>
+      </form>
+      <div class="account-actions">
+        @if (user.isAdmin) { <a routerLink="/admin">Admin panel</a> }
+        <button type="button" (click)="logout()" [disabled]="busy()">{{ busy() ? 'Logging out...' : 'Log out' }}</button>
+      </div>
+    } @else {
+      <p>You are already signed in as {{ user.email }}.</p>
+      <p class="message"><a routerLink="/account">Go to my account</a></p>
+    }
+  } @else if (mode() === 'account') {
+    <p>You need to log in to view your account.</p>
+    <div class="account-actions"><a routerLink="/login">Log in</a><a routerLink="/register">Create an account</a></div>
+  } @else {
+    <form class="search-form account-form" #form="ngForm" (ngSubmit)="form.valid && submit()">
+      <label for="account-email">Email</label>
+      <input id="account-email" name="email" type="email" required email
+        autocomplete="username" [(ngModel)]="email" [disabled]="busy()" />
+      <label for="account-password">Password</label>
+      <input id="account-password" name="password" type="password" required
+        [attr.autocomplete]="mode() === 'register' ? 'new-password' : 'current-password'"
+        [(ngModel)]="password" [disabled]="busy()" />
+      @if (mode() === 'register') {
+        <p class="muted">Use at least 6 characters, including uppercase, lowercase, a number, and a symbol.</p>
+      }
+      <button type="submit" [disabled]="form.invalid || busy()">
+        {{ busy() ? 'Please wait...' : mode() === 'login' ? 'Log in' : 'Create account' }}
+      </button>
+    </form>
+    <p class="message">
+      @if (mode() === 'login') { New to TibiaIntel? <a routerLink="/register">Create an account</a> }
+      @else { Already have an account? <a routerLink="/login">Log in</a> }
+    </p>
+  }
+  @if (message()) { <p class="message" role="status">{{ message() }}</p> }
+  @if (error()) { <p class="message error" role="alert">{{ error() }}</p> }
+</section>

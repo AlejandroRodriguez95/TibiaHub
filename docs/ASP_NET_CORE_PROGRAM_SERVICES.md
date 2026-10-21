@@ -4,7 +4,7 @@ This file is a study map for the main things that appear in `Program.cs`, especi
 
 `builder.Services` is the dependency injection container setup area. Most calls here register services that controllers, middleware, Identity, EF Core, HTTP clients, and other app code can use later.
 
-## Current TibiaHub Setup
+## Current TibiaIntel Setup
 
 ### `builder.Services.AddDbContext<ApplicationDbContext>()`
 
@@ -564,7 +564,7 @@ dotnet ef migrations remove
 Run the app:
 
 ```powershell
-dotnet run --project TibiaHub
+dotnet run --project TibiaIntel
 ```
 
 ## Current Cookie And CSRF Configuration

@@ -23,7 +23,7 @@ Daily cleanup removes sessions ending before the 14-day cutoff, older observatio
 Apply the migration before starting the collector:
 
 ```powershell
-dotnet ef database update --project TibiaHub
+dotnet ef database update --project TibiaIntel
 ```
 
 Collection respects both `DataRefresh:Enabled` and `CharacterScan:Enabled`. Tests disable background collection and use temporary PostgreSQL databases.

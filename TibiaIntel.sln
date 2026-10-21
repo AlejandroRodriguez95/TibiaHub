@@ -1,0 +1,40 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TibiaIntel", "TibiaIntel\TibiaIntel.csproj", "{F5F9EBF2-99D5-4957-B866-A25489C732B0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{7A29A985-C57E-4AB4-9147-82C60C5532D2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\ROADMAP.MD = docs\ROADMAP.MD
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1DF82C08-04DE-4A4D-9265-155015C2B367}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TibiaIntel.Tests", "tests\TibiaIntel.Tests\TibiaIntel.Tests.csproj", "{B5C5B10D-3BED-4B38-B578-D8D822C9DF45}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F5F9EBF2-99D5-4957-B866-A25489C732B0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5F9EBF2-99D5-4957-B866-A25489C732B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5F9EBF2-99D5-4957-B866-A25489C732B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5F9EBF2-99D5-4957-B866-A25489C732B0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B5C5B10D-3BED-4B38-B578-D8D822C9DF45}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B5C5B10D-3BED-4B38-B578-D8D822C9DF45}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B5C5B10D-3BED-4B38-B578-D8D822C9DF45}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B5C5B10D-3BED-4B38-B578-D8D822C9DF45}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{B5C5B10D-3BED-4B38-B578-D8D822C9DF45} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+	EndGlobalSection
+EndGlobal

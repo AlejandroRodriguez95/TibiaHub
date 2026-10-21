@@ -1,0 +1,64 @@
+<section class="hero" aria-labelledby="home-title">
+  <svg class="hero-chart" viewBox="0 0 700 430" fill="none" aria-hidden="true">
+    <g stroke="currentColor">
+      <path d="M20 380C120 220 40 140 230 130S390 330 510 190 580 10 710 20M0 330C100 200 70 100 230 100S400 280 490 160 580-10 700-10M10 410C160 290 70 180 240 165S390 370 540 220 600 70 710 55"/>
+      <circle cx="350" cy="190" r="76"/><circle cx="350" cy="190" r="63"/>
+      <path d="M350 95V285M255 190H445M350 121L366 190 350 259 334 190Z"/>
+    </g>
+    <path class="chart-route" d="M40 300C200 190 160 380 310 320S460 350 490 210 640 260 690 120" stroke-dasharray="6 10"/>
+  </svg>
+  <div class="hero-copy">
+    <p class="eyebrow">A Tibia companion</p>
+    <h1 id="home-title">Your next adventure<br class="desktop-break" /> starts here.</h1>
+    <p class="intro">Find characters across Tibia worlds. Keep your journey close.</p>
+    <a class="text-link hero-link" routerLink="/characters">Explore character lookup <span aria-hidden="true">↗</span></a>
+  </div>
+  <aside class="profile-preview" aria-labelledby="preview-title">
+    <div class="preview-top"><p class="eyebrow">Character preview</p><span class="example-tag">Example</span></div>
+    <div class="preview-heading">
+      <span class="crest" aria-hidden="true">✦</span>
+      <div><h2 id="preview-title">Knightmare</h2><p class="muted">Elite Knight · Secura</p></div>
+    </div>
+    <dl class="preview-details">
+      <div><dt>Level</dt><dd>312</dd></div>
+      <div><dt>Vocation</dt><dd>Elite Knight</dd></div>
+      <div><dt>World</dt><dd>Secura</dd></div>
+    </dl>
+    <p class="preview-note">Every character has a story. Find yours.</p>
+  </aside>
+</section>
+
+<section class="landing-search" aria-labelledby="search-title">
+  <form class="search-form" (ngSubmit)="search()">
+    <label class="eyebrow" id="search-title" for="landing-name">Who are you looking for?</label>
+    <div class="search-row">
+      <input id="landing-name" name="characterName" type="text" autocomplete="off" placeholder="Enter character name…"
+        [ngModel]="name()" (ngModelChange)="name.set($event); error.set('')" [attr.aria-invalid]="error() ? true : null" [attr.aria-describedby]="error() ? 'landing-error' : null" />
+      <button type="submit">Find character <span aria-hidden="true">→</span></button>
+    </div>
+    @if (error()) { <p id="landing-error" class="error" role="alert">{{ error() }}</p> }
+  </form>
+  <div class="search-account"><p class="muted">New to TibiaIntel?</p><a routerLink="/register">Create account <span aria-hidden="true">→</span></a></div>
+</section>
+
+<section class="feature-grid" aria-label="Explore TibiaIntel">
+  <article class="feature-card feature-main">
+    <span class="feature-number" aria-hidden="true">01 / DISCOVER</span>
+    <h2>Character lookup</h2>
+    <p>Find characters across Tibia worlds and see their profile at a glance.</p>
+    <a routerLink="/characters">Start searching <span aria-hidden="true">→</span></a>
+    <span class="feature-mark" aria-hidden="true">⌕</span>
+  </article>
+  <article class="feature-card">
+    <span class="feature-number" aria-hidden="true">02 / EXPLORE</span>
+    <h2>A closer look</h2>
+    <p>See a character’s world, vocation, residence, and guild in one place.</p>
+    <a routerLink="/characters">Look up a profile <span aria-hidden="true">→</span></a>
+  </article>
+  <article class="feature-card">
+    <span class="feature-number" aria-hidden="true">03 / BELONG</span>
+    <h2>Your account</h2>
+    <p>Make yourself at home. Create an account and join TibiaIntel.</p>
+    <a routerLink="/register">Create account <span aria-hidden="true">→</span></a>
+  </article>
+</section>

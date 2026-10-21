@@ -1,6 +1,6 @@
-# TibiaHub
+# TibiaIntel
 
-TibiaHub is a learning and portfolio project for building a Tibia fansite with ASP.NET Core and Angular.
+TibiaIntel is a learning and portfolio project for building a Tibia fansite with ASP.NET Core and Angular.
 
 The goal is to build a web application with reusable API functionality that can later support other clients, such as Discord bots or TeamSpeak 3 bots.
 
@@ -20,16 +20,16 @@ The project will use separate projects inside the same solution instead of separ
 Planned structure:
 
 ```text
-TibiaHub.sln
+TibiaIntel.sln
 src/
-  TibiaHub.Api
-  TibiaHub.Application
-  TibiaHub.Domain
-  TibiaHub.Infrastructure
+  TibiaIntel.Api
+  TibiaIntel.Application
+  TibiaIntel.Domain
+  TibiaIntel.Infrastructure
 client/
-  tibiahub-angular
+  tibiaintel-angular
 tests/
-  TibiaHub.Tests
+  TibiaIntel.Tests
 docs/
   ROADMAP.MD
 ```
@@ -49,7 +49,7 @@ Initial displayed data may include:
 - Guild.
 - Residence or other available profile fields.
 
-Character data will come from an external Tibia API selected later. The Angular frontend should call `TibiaHub.Api`, and the backend API should handle communication with the external Tibia API.
+Character data will come from an external Tibia API selected later. The Angular frontend should call `TibiaIntel.Api`, and the backend API should handle communication with the external Tibia API.
 
 ## Current Status
 
@@ -58,7 +58,7 @@ login, current-user lookup, and logout. Angular provides character lookup and ac
 forms with cookie sessions and CSRF protection.
 
 The Petrol & Lantern frontend includes a Tools tab with an NPC selling catalogue.
-Configure merchants in `TibiaHub/DataRefresh/refresh-sources.json`. A shared background
+Configure merchants in `TibiaIntel/DataRefresh/refresh-sources.json`. A shared background
 collector refreshes prices and delivery-task membership daily at 10:30 Europe/Vienna,
 retaining the last complete snapshot across failures and restarts. Independently cached
 [world market averages](docs/features/MARKET_VALUES.md) support price comparisons. See [NPC selling](docs/features/NPC_SELLING.md) and
@@ -71,22 +71,39 @@ Character timing scans are available under **Tools > Character scan** (`/tools/c
 
 ## Running Locally
 
+The Compose project is named `tibiaintel` and uses the `tibiaintel` database and
+user. When upgrading an existing checkout after the rename, stop the previous
+PostgreSQL container before starting this stack because both use port 5433.
+Existing Docker volumes are preserved, but the renamed stack uses a new volume.
+Back up and transfer any existing database data before switching; otherwise run
+the migrations below to initialize the new database.
+
 Start Docker Desktop with Linux containers, then run:
 
 ```powershell
 docker compose up -d
 dotnet tool restore
-dotnet ef database update --project TibiaHub
-dotnet run --project TibiaHub --launch-profile http
+dotnet ef database update --project TibiaIntel
+dotnet run --project TibiaIntel --launch-profile http
 ```
 
 In another terminal:
 
+Install Node.js (which includes npm) and make sure it is on your Windows `PATH`.
+Open a new terminal after installing, then verify with `node --version` and
+`npm --version`. Rider may provide its own Node.js runtime that is available only
+inside the IDE; a regular Command Prompt needs Node.js on its own `PATH`.
+
 ```powershell
-cd client/tibiahub-angular
+cd client/tibiaintel-angular
 npm install
 npm start
 ```
+
+Run these commands from `client/tibiaintel-angular`, where `package.json` lives.
+`npm install` installs this project's dependencies, including the Angular CLI;
+you do not need to install Angular CLI globally. If CMD reports that `npm` is not
+recognized, check the Node.js installation and `PATH` first.
 
 Open `http://localhost:4200`; the API runs on `http://localhost:5267`.
 Use Node.js 22.22.3+, 24.15.0+, or another version supported by Angular 22.
@@ -99,7 +116,7 @@ Register an account normally, then grant it the Identity `Admin` role from a tru
 terminal with access to the application's database:
 
 ```powershell
-dotnet run --project TibiaHub -- --grant-admin "your-email@example.com"
+dotnet run --project TibiaIntel -- --grant-admin "your-email@example.com"
 ```
 
 The command updates an existing account and exits without starting the server.
@@ -118,7 +135,7 @@ extend `AdminUserResponse` and the Angular table when adding more profile fields
 Start Docker Desktop (using Linux containers), then run:
 
 ```powershell
-dotnet test TibiaHub.sln
+dotnet test TibiaIntel.sln
 ```
 
 The registration integration tests use xUnit, `WebApplicationFactory`, and Testcontainers.

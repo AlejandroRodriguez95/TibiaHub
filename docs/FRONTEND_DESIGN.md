@@ -4,7 +4,7 @@ The visual reference is [the landing mockup](mockups/landing-petrol-lantern.png)
 
 ## Color and surfaces
 
-Use the CSS custom properties in `client/tibiahub-angular/src/styles.scss` as the source of truth. Background `#131d20`, panels `#202d30`, raised inputs `#26363a`, borders `#405459`, primary text `#e2e5df`, secondary text `#b0bdbe`, sea glass links `#91b8b0`, lantern amber actions `#d3af78`. Primary actions use dark text on amber. Reserve red for errors; do not use status colors decoratively or claim online status without data.
+Use the CSS custom properties in `client/tibiaintel-angular/src/styles.scss` as the source of truth. Background `#131d20`, panels `#202d30`, raised inputs `#26363a`, borders `#405459`, primary text `#e2e5df`, secondary text `#b0bdbe`, sea glass links `#91b8b0`, lantern amber actions `#d3af78`. Primary actions use dark text on amber. Reserve red for errors; do not use status colors decoratively or claim online status without data.
 
 Keep surfaces matte, with fine borders and 6–10px corners. Avoid neon, luminous shadows, glass effects, bright white backgrounds, ornate frames, and large fantasy scenery. Sparse compass/route line art may decorate the hero without carrying information.
 

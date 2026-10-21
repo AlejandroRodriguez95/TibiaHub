@@ -1,8 +1,8 @@
-# TibiaHub Roadmap
+# TibiaIntel Roadmap
 
 ## Project Goal
 
-TibiaHub is a learning and portfolio project for building a Tibia fansite with ASP.NET Core and Angular.
+TibiaIntel is a learning and portfolio project for building a Tibia fansite with ASP.NET Core and Angular.
 
 The long-term idea is to provide different Tibia-related features through a web frontend, while also exposing reusable API functionality that could later be consumed by Discord bots, TeamSpeak 3 bots, or other integrations.
 
@@ -34,12 +34,12 @@ Separating the API from the backend server is useful because:
 - Use separate projects inside the same solution instead of separate repositories or separately deployed services for now.
 - Split the current single ASP.NET Core project into clearer projects when ready.
 - Target a structure similar to:
-  - `TibiaHub.Api`
-  - `TibiaHub.Application`
-  - `TibiaHub.Domain`
-  - `TibiaHub.Infrastructure`
+  - `TibiaIntel.Api`
+  - `TibiaIntel.Application`
+  - `TibiaIntel.Domain`
+  - `TibiaIntel.Infrastructure`
   - Angular client project under `client`, `frontend`, or similar
-  - `TibiaHub.Tests`
+  - `TibiaIntel.Tests`
 
 ### 2. Backend Foundation
 
@@ -100,7 +100,7 @@ The first feature should stay small enough to finish end-to-end across API, back
 - Consider API keys or bot-specific JWT clients later.
 - Keep Discord and TS3 bot integrations as future consumers, not part of the initial core.
 - Use an external Tibia API as the upstream data source once the specific API is selected.
-- Route frontend requests through `TibiaHub.Api` instead of calling the external Tibia API directly from Angular.
+- Route frontend requests through `TibiaIntel.Api` instead of calling the external Tibia API directly from Angular.
 
 ### 7. Testing And Portfolio Polish
 

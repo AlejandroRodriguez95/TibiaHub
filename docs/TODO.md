@@ -1,4 +1,4 @@
-# TibiaHub TODO
+# TibiaIntel TODO
 
 ## Current State
 

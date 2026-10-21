@@ -1,6 +1,6 @@
 # Shared data refresh infrastructure
 
-This infrastructure lives in `TibiaHub/DataRefresh`, separately from frontend tools and feature controllers. It is intended for future shared data collectors as well as NPC purchases.
+This infrastructure lives in `TibiaIntel/DataRefresh`, separately from frontend tools and feature controllers. It is intended for future shared data collectors as well as NPC purchases.
 
 ## Protocol
 
@@ -27,7 +27,7 @@ The JSON source file reloads on change. Environment variables and command-line c
 
 ## Snapshot storage
 
-`JsonSnapshotStore<T>` persists `DataSnapshot<T>` with `UpdatedAt`, `SourceKey`, and `Data`. It serializes access, writes a temporary file, atomically replaces the previous file, and only then updates its in-memory snapshot. Files live in `TibiaHub/App_Data/refresh` by default and are ignored by Git. Corrupt/unreadable files are logged and treated as missing. Storage failures fail the refresh rather than claiming success. Cancellation before publication leaves the last complete snapshot intact. Mount this directory on persistent storage when running in a container.
+`JsonSnapshotStore<T>` persists `DataSnapshot<T>` with `UpdatedAt`, `SourceKey`, and `Data`. It serializes access, writes a temporary file, atomically replaces the previous file, and only then updates its in-memory snapshot. Files live in `TibiaIntel/App_Data/refresh` by default and are ignored by Git. Corrupt/unreadable files are logged and treated as missing. Storage failures fail the refresh rather than claiming success. Cancellation before publication leaves the last complete snapshot intact. Mount this directory on persistent storage when running in a container.
 
 For NPC data the source key includes normalized names and source URLs, so adding/removing an NPC triggers collection and prevents serving an outdated merchant selection. Any failed NPC or task-page parse rejects the whole new snapshot. Existing same-configuration data stays available. The HTML adapter accepts only the dedicated purchase table and task item tables; changes in source markup fail closed rather than silently publishing incomplete prices. Purchase rows are sorted by name and de-duplicated.
 

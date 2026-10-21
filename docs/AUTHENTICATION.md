@@ -1,6 +1,6 @@
 # Browser Authentication
 
-TibiaHub uses ASP.NET Core Identity with cookies for Angular. Identity continues to manage password hashing, user storage, and lockout. JWT issuance and refresh tokens are not part of the current implementation. Future non-browser clients can use another mechanism when required.
+TibiaIntel uses ASP.NET Core Identity with cookies for Angular. Identity continues to manage password hashing, user storage, and lockout. JWT issuance and refresh tokens are not part of the current implementation. Future non-browser clients can use another mechanism when required.
 
 ## Endpoints
 

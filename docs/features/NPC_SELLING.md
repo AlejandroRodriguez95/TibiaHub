@@ -18,7 +18,7 @@ The collector reads only the NPC's **Buys** table, never its **Sells** table. De
 
 ## Configuration and collection
 
-Edit **`TibiaHub/DataRefresh/refresh-sources.json`**, outside the feature, to hardcode NPC names in `NpcTradeSource.NpcNames`. It starts with `Rashid` as a working example. Use exact wiki NPC names. Duplicates and surrounding spaces are removed; an empty list is supported. Name changes automatically invalidate the previous configuration's catalogue and trigger collection within the coordinator's next poll. Invalid NPCs or upstream/parser failures never publish a partial catalogue.
+Edit **`TibiaIntel/DataRefresh/refresh-sources.json`**, outside the feature, to hardcode NPC names in `NpcTradeSource.NpcNames`. It starts with `Rashid` as a working example. Use exact wiki NPC names. Duplicates and surrounding spaces are removed; an empty list is supported. Name changes automatically invalidate the previous configuration's catalogue and trigger collection within the coordinator's next poll. Invalid NPCs or upstream/parser failures never publish a partial catalogue.
 
 The shared refresh coordinator collects on first run, catches up after downtime, and refreshes daily at **10:30 Europe/Vienna** (CET in winter, CEST in summer). Change the JSON time zone if a fixed UTC+01:00 schedule is needed instead. Retry after failure: 15 minutes. Refer to [DATA_REFRESH.md](../DATA_REFRESH.md) for the separate infrastructure contract.
 
