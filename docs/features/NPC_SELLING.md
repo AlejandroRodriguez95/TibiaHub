@@ -2,7 +2,7 @@
 
 ## Purpose and user flow
 
-Publicly accessible under **Tools** in the navigation, at `/tools`. Select a configured NPC to see every item they buy, its icon (or a placeholder), name, NPC purchase price, and average market value. Prices are per item, in gold coins. Rows matching the delivery-task catalogue have a muted amber background and a visible **Delivery task** label; color alone never carries meaning.
+Publicly accessible under **Tools** in the navigation, at `/tools/npc-selling` (`/tools` redirects there). Select a configured NPC to see every item they buy, its icon (or a placeholder), name, NPC purchase price, and average market value. Prices are per item, in gold coins. Rows matching the delivery-task catalogue have a muted amber background and a visible **Delivery task** label; color alone never carries meaning.
 
 Average market values come from a separately collected world catalogue. Select a **Market world** to compare its monthly average against the NPC price. Higher values get a sea-glass cell border, independently of delivery-task highlighting. Missing averages are **Unavailable**, never placeholder zeroes. See [MARKET_VALUES.md](MARKET_VALUES.md) for average definitions, item matching, freshness, and cache details.
 
@@ -18,13 +18,13 @@ The collector reads only the NPC's **Buys** table, never its **Sells** table. De
 
 ## Configuration and collection
 
-Edit **`TibiaIntel/DataRefresh/refresh-sources.json`**, outside the feature, to hardcode NPC names in `NpcTradeSource.NpcNames`. It starts with `Rashid` as a working example. Use exact wiki NPC names. Duplicates and surrounding spaces are removed; an empty list is supported. Name changes automatically invalidate the previous configuration's catalogue and trigger collection within the coordinator's next poll. Invalid NPCs or upstream/parser failures never publish a partial catalogue.
+Edit **`TibiaIntel/DataRefresh/refresh-sources.json`**, outside the feature, to hardcode NPC names in `NpcTradeSource.NpcNames`. The checked-in list contains `Rashid` and `Yasir`. Use exact wiki NPC names. Duplicates and surrounding spaces are removed; an empty list is supported. Name changes automatically invalidate the previous configuration's catalogue and trigger collection within the coordinator's next poll. Invalid NPCs or upstream/parser failures never publish a partial catalogue.
 
 The shared refresh coordinator collects on first run, catches up after downtime, and refreshes daily at **10:30 Europe/Vienna** (CET in winter, CEST in summer). Change the JSON time zone if a fixed UTC+01:00 schedule is needed instead. Retry after failure: 15 minutes. Refer to [DATA_REFRESH.md](../DATA_REFRESH.md) for the separate infrastructure contract.
 
 ## API
 
-`GET /tools/npc-selling?world=Antica` returns `updatedAt` (UTC), `isStale`, `worlds`, market availability/freshness metadata, and `npcs: [{ name, items: [{ name, npcPrice, iconUrl, isDeliveryTask, averageMarketValue, isMarketHigher, marketSourceUpdatedAt }] }]`. The world parameter is optional; without it market values are null. `marketValuesArePlaceholders` is false.
+`GET /tools/npc-selling?world=Antica` returns `updatedAt` (UTC), `isStale`, `worlds`, market availability/freshness metadata, and `npcs: [{ name, items: [{ name, npcPrice, iconUrl, isDeliveryTask, averageMarketValue, isMarketHigher, marketSourceUpdatedAt }] }]`. The world parameter is optional; without it a signed-in user's valid saved default world is used. Otherwise no world is selected and market values are null. `marketValuesArePlaceholders` is false.
 
 The endpoint serves the last complete snapshot on upstream failure and marks it stale after 25 hours. With no snapshot, or a changed source configuration, it returns HTTP 503 and `Retry-After: 30`. The UI explains unavailability and provides Retry. An empty configured NPC list returns an empty catalogue. The user must explicitly select an NPC. All timestamps are displayed in the user's local time.
 

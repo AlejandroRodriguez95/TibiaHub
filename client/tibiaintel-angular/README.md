@@ -1,78 +1,57 @@
-# TibiaIntelAngular
+# TibiaIntel Angular frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.2.
+Angular 22 application using the [Petrol & Lantern design](../../docs/FRONTEND_DESIGN.md).
 
-## Development server
+## Local development
 
-To start a local development server, run:
+Use Node.js compatible with the installed Angular packages (currently
+`^22.22.3 || ^24.15.0 || >=26.0.0`). From this directory:
 
-```bash
-ng serve
+```powershell
+npm ci
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Open `http://localhost:4200`. Start the API from the repository root with
+`dotnet run --project TibiaIntel --launch-profile http` after setting up PostgreSQL
+and applying migrations. See the [root README](../../README.md) for the full setup.
+The npm scripts use the local Angular CLI; no global CLI installation is required.
 
-## Code scaffolding
+## Routes
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+| Path | Purpose |
+| --- | --- |
+| `/` | Landing page and character search handoff. |
+| `/characters?name=Example` | Public character lookup; the name parameter runs a lookup. |
+| `/tools/npc-selling` | Public NPC purchases and world market comparisons. |
+| `/tools/character-scan` | Session timing results for signed-in users. |
+| `/login`, `/register`, `/account` | Account forms, session details, default-world preference, and logout. |
+| `/admin` | Admin user list. |
+| `/tools`, `/scans` | Redirects to NPC selling and character scans respectively. |
 
-```bash
-ng generate component component-name
+Unknown routes redirect home. Components display authentication/authorization states;
+there are no route guards. The API enforces protected endpoint access.
+
+## Authentication and API configuration
+
+API URLs currently target `http://localhost:5267`; configure them for production.
+Account and authenticated tool requests send credentials. The browser manages the
+HttpOnly Identity cookie; credentials are not stored in localStorage. Each account
+write first obtains a fresh token from `/account/csrf`, then sends `X-CSRF-TOKEN`.
+See [authentication](../../docs/AUTHENTICATION.md) for contracts and deployment notes.
+
+Production hosting must serve `index.html` for frontend routes, including direct
+links and refreshes. The backend does not currently host the Angular build.
+
+## Verification and build
+
+```powershell
+npm test -- --watch=false
+npm run build
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+`npm test` runs Angular's Vitest setup; omit `--watch=false` for watch mode.
+Build artifacts are written under `dist/tibiaintel-angular/`. No end-to-end test
+runner is configured.
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
-
-## Account authentication
-
-The frontend has separate `/login`, `/register`, and `/account` pages with shared
-navigation. `/account` shows the signed-in user's email and ID and provides logout.
-The Petrol & Lantern landing page is at `/`; character lookup is at `/characters`.
-The home search hands a name to `/characters?name=...` and runs the lookup.
-Account pages restore the session on entry. Design rules are in
-[FRONTEND_DESIGN.md](../../docs/FRONTEND_DESIGN.md).
-Start the API with `dotnet run --project TibiaIntel --launch-profile http` from the
-repository root. Account requests use `http://localhost:5267/account` with
-`withCredentials: true`; use `http://localhost:4200` for the Angular origin.
-The browser manages the HttpOnly Identity cookie. Before each account write,
-the panel requests a fresh antiforgery token and sends it in `X-CSRF-TOKEN`.
-No authentication credentials are stored in localStorage.
-
-See [authentication documentation](../../docs/AUTHENTICATION.md) for the endpoint
-contract, local development settings, and deployment requirements. API URLs
-currently target local development and must be configured for production hosting.
+Use `npm exec ng generate component component-name` for local CLI scaffolding.

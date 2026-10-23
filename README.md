@@ -4,52 +4,24 @@ TibiaIntel is a learning and portfolio project for building a Tibia fansite with
 
 The goal is to build a web application with reusable API functionality that can later support other clients, such as Discord bots or TeamSpeak 3 bots.
 
-## Planned Stack
+## Stack and repository structure
 
-- ASP.NET Core for the backend/API.
-- Angular for the frontend.
-- PostgreSQL for persistence.
-- Docker for local database setup.
-- ASP.NET Core Identity for user management.
-- ASP.NET Core Identity cookies for Angular authentication.
-
-## Architecture Direction
-
-The project will use separate projects inside the same solution instead of separate repositories.
-
-Planned structure:
+- .NET 10 / ASP.NET Core API with EF Core and Identity cookie authentication.
+- Angular 22 frontend.
+- PostgreSQL 17, with Docker Compose for local development.
+- JSON snapshots for shared NPC, world, and market data; PostgreSQL for accounts and observed character sessions.
 
 ```text
 TibiaIntel.sln
-src/
-  TibiaIntel.Api
-  TibiaIntel.Application
-  TibiaIntel.Domain
-  TibiaIntel.Infrastructure
-client/
-  tibiaintel-angular
-tests/
-  TibiaIntel.Tests
-docs/
-  ROADMAP.MD
+TibiaIntel/                 ASP.NET Core API, collectors, and EF migrations
+client/tibiaintel-angular/  Angular application
+tests/TibiaIntel.Tests/     Backend unit and integration tests
+docs/                      Feature contracts, design, and project plans
 ```
 
-The API should be the reusable surface for the Angular frontend and future bot integrations.
-
-## First Planned Feature
-
-The first feature will be a simple Tibia character lookup.
-
-Initial displayed data may include:
-
-- Character name.
-- Level.
-- Vocation.
-- World.
-- Guild.
-- Residence or other available profile fields.
-
-Character data will come from an external Tibia API selected later. The Angular frontend should call `TibiaIntel.Api`, and the backend API should handle communication with the external Tibia API.
+The backend currently lives in one project. Splitting it into API, Application,
+Domain, and Infrastructure projects is a future refactoring option. Angular calls
+the backend; character lookup uses TibiaData through the API.
 
 ## Current Status
 
@@ -67,7 +39,7 @@ retaining the last complete snapshot across failures and restarts. Independently
 See [the roadmap](docs/ROADMAP.MD), [current next steps](docs/TODO.md), and
 [authentication details](docs/AUTHENTICATION.md).
 
-Character timing scans are available under **Tools > Character scan** (`/tools/character-scan`) for signed-in accounts. The collector monitors all active worlds and stores 14 days of observed sessions in PostgreSQL. Apply the new migration before restarting the backend. See [character scans](docs/features/CHARACTER_SCANS.md) for scoring, exclusions, retention, and configuration.
+Character timing scans are available under **Tools > Character scan** (`/tools/character-scan`) for signed-in accounts. The collector monitors all active worlds and stores 14 days of observed sessions in PostgreSQL. Apply database migrations before starting the backend. See [character scans](docs/features/CHARACTER_SCANS.md) for scoring, exclusions, retention, and configuration.
 
 ## Running Locally
 
@@ -78,7 +50,7 @@ Existing Docker volumes are preserved, but the renamed stack uses a new volume.
 Back up and transfer any existing database data before switching; otherwise run
 the migrations below to initialize the new database.
 
-Start Docker Desktop with Linux containers, then run:
+Install the .NET 10 SDK and Docker Desktop. From the repository root, start Docker Desktop with Linux containers, then run:
 
 ```powershell
 docker compose up -d
@@ -96,19 +68,23 @@ inside the IDE; a regular Command Prompt needs Node.js on its own `PATH`.
 
 ```powershell
 cd client/tibiaintel-angular
-npm install
+npm ci
 npm start
 ```
 
 Run these commands from `client/tibiaintel-angular`, where `package.json` lives.
-`npm install` installs this project's dependencies, including the Angular CLI;
+`npm ci` installs this project's dependencies, including the Angular CLI;
 you do not need to install Angular CLI globally. If CMD reports that `npm` is not
 recognized, check the Node.js installation and `PATH` first.
 
 Open `http://localhost:4200`; the API runs on `http://localhost:5267`.
 Use Node.js 22.22.3+, 24.15.0+, or another version supported by Angular 22.
-Configure `ConnectionStrings:DefaultConnection` for your local PostgreSQL instance;
-keep real credentials outside source control.
+The Development connection string already matches Compose's default database on port
+5433. `.env.example` documents Compose overrides; a root `.env` is read by Compose,
+not by ASP.NET Core. If you change the database credentials or port, also set
+`ConnectionStrings__DefaultConnection` in the API process environment. Keep real
+credentials outside source control. The project does not currently declare a
+`UserSecretsId`; initialize user secrets before using that storage option.
 
 ## Admin panel
 
@@ -144,9 +120,21 @@ and remove the container when the suite finishes. No development database or `.e
 configuration is needed. The first run requires internet access to restore NuGet
 packages and download the container images.
 
-Coverage includes successful registration and password hashing, duplicate emails
-(including different casing), request validation, and Identity password rules.
+Coverage includes registration and password rules, cookie sessions and CSRF,
+admin authorization and default-world preferences, NPC parsing, market snapshots,
+upstream pacing, online observations, and character scan scoring/retention.
 
+For frontend tests and a production build, run from `client/tibiaintel-angular`:
 
-Authentication coverage also verifies current-user lookup, isolated cookie sessions, logout, and CSRF rejection.
+```powershell
+npm test -- --watch=false
+npm run build
+```
 
+## Documentation
+
+- [Roadmap](docs/ROADMAP.MD) and [remaining work](docs/TODO.md).
+- [Authentication and account preferences](docs/AUTHENTICATION.md).
+- [NPC selling](docs/features/NPC_SELLING.md), [market values](docs/features/MARKET_VALUES.md), and [character scans](docs/features/CHARACTER_SCANS.md).
+- [Shared data refresh operations](docs/DATA_REFRESH.md).
+- [Frontend design](docs/FRONTEND_DESIGN.md) and [ASP.NET Core study notes](docs/ASP_NET_CORE_PROGRAM_SERVICES.md).

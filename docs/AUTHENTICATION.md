@@ -8,8 +8,9 @@ TibiaIntel uses ASP.NET Core Identity with cookies for Angular. Identity continu
 | --- | --- | --- |
 | GET | `/account/csrf` | Sets an antiforgery cookie and returns `{ token }`. |
 | POST | `/account/register` | Creates a user; does not sign them in. |
-| POST | `/account/login` | Validates credentials, sets the Identity cookie, and returns `{ id, email }`. |
-| GET | `/account/myaccount` | Returns `{ id, email }` for the current user, or 401. |
+| POST | `/account/login` | Validates credentials, sets the Identity cookie, and returns `{ id, email, isAdmin }`. |
+| GET | `/account/myaccount` | Returns `{ id, email, isAdmin, defaultWorld, worlds }` for the current user, or 401. |
+| POST | `/account/default-world` | Requires authentication and CSRF; saves `{ world }` and returns `{ defaultWorld }`. |
 | POST | `/account/logout` | Requires authentication, clears the cookie, and returns 204. |
 
 MVC controllers use a global `AutoValidateAntiforgeryTokenAttribute` filter configured in `Program.cs`. Requests using methods other than GET, HEAD, OPTIONS, and TRACE require the antiforgery cookie and the corresponding token in `X-CSRF-TOKEN`. Missing or invalid tokens return 400. This includes all account POST requests and future controller writes. Fetch a new token after authentication changes: tokens are bound to the current identity. Angular fetches a fresh token before each write. Account responses are marked `no-store`.
@@ -30,6 +31,21 @@ Start the API with the HTTP launch profile on `http://localhost:5267` and Angula
 Angular sends account requests with `withCredentials: true`. Development CORS permits that exact Angular origin and credentials. Authentication cookies use `SameSite=Lax`, `HttpOnly`, and HTTPS-only transport outside Development. Anonymous API requests return 401 rather than redirecting to a login page; forbidden requests return 403.
 
 To try the API with an HTTP client, keep its cookie jar enabled, fetch `/account/csrf`, then include the returned token header when registering or logging in. After login, `/account/myaccount` should return your user. Fetch a new CSRF token, log out, and verify `/account/myaccount` returns 401 again.
+
+## Default world and admin access
+
+The account page loads `worlds` from the cached independent world directory and lets
+users save a default world. `POST /account/default-world` accepts `{ "world": "Antica" }`;
+matching ignores casing and surrounding spaces. Unknown worlds return 400. A null,
+empty, or whitespace world clears the preference. The value is stored as the
+`tibiaintel:default-world` Identity user claim, without a schema change. An empty
+world directory prevents selecting a world until collection succeeds.
+
+NPC selling uses a signed-in user's valid preference when no explicit world is
+provided. It never triggers a world refresh. The account page also links Admin users
+to `/admin`. `GET /admin/users` requires the Admin role; see the
+[README](../README.md#admin-panel) for the trusted `--grant-admin` command. Angular
+routes have no guards; components handle access states and the API enforces access.
 
 ## Deployment
 

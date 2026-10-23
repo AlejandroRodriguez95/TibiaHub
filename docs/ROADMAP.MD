@@ -1,140 +1,35 @@
-# TibiaIntel Roadmap
+# TibiaIntel roadmap
 
-## Project Goal
+## Goal
 
-TibiaIntel is a learning and portfolio project for building a Tibia fansite with ASP.NET Core and Angular.
+Build a Tibia fansite as a learning and portfolio project, with an Angular frontend and reusable ASP.NET Core API functionality that could later support Discord or TeamSpeak integrations.
 
-The long-term idea is to provide different Tibia-related features through a web frontend, while also exposing reusable API functionality that could later be consumed by Discord bots, TeamSpeak 3 bots, or other integrations.
+## Implemented foundation
 
-## Initial Architecture Direction
+- One .NET 10 ASP.NET Core backend under `TibiaIntel/`, Angular 22 under `client/tibiaintel-angular/`, and backend tests under `tests/TibiaIntel.Tests/`.
+- PostgreSQL 17 through Docker Compose, EF Core migrations, and ASP.NET Core Identity.
+- Cookie authentication, CSRF protection, account preferences, and Admin role authorization.
+- Petrol & Lantern frontend with landing, character lookup, account, admin, and tool pages.
+- Public character lookup using TibiaData v4 through the backend.
+- [NPC selling](features/NPC_SELLING.md) with delivery-task highlighting and [world market comparisons](features/MARKET_VALUES.md).
+- Independent world/NPC/market jobs with durable JSON snapshots and [shared refresh infrastructure](DATA_REFRESH.md).
+- Authenticated [character scans](features/CHARACTER_SCANS.md) using 14 days of observed same-world session timing stored in PostgreSQL.
+- Backend unit/integration tests and Angular component tests.
 
-- Frontend: Angular, kept in the same repository but separated from backend projects.
-- Backend server: ASP.NET Core.
-- API: ASP.NET Core, separated as its own project inside the same solution.
-- Authentication: ASP.NET Core Identity with cookie authentication for Angular.
-- Database: PostgreSQL running through Docker for local development.
-- Project style: learning-focused, but structured cleanly enough to serve as a portfolio project.
+## Next milestones
 
-## Architecture Notes
+1. Prepare account and hosting flows for deployment: email confirmation, password recovery, production API URLs, HTTPS, persistent Data Protection keys, SPA route fallback, and durable cache storage.
+2. Continue browser verification and improve feature coverage as behavior evolves. Keep setup instructions and feature contracts aligned with implementation.
+3. Split the backend into API, Application, Domain, and Infrastructure projects if the growing codebase benefits from those boundaries. These projects do not exist yet.
+4. Choose another feature when requirements are concrete. Possibilities include guild/world lookup, saved characters, hunting notes, boss tracking, or imbuement helpers.
+5. Add bot integrations through the API when needed, with an authentication mechanism chosen for those clients.
 
-The API should be treated as the reusable application surface. The web backend and future external integrations should depend on API contracts instead of duplicating business logic.
+## Current decisions and open choices
 
-Separating the API from the backend server is useful because:
+- Keep the Angular frontend and backend in the same repository. Serve reusable API contracts rather than duplicating logic in future clients.
+- Use Identity cookies for browser authentication; JWT issuance and refresh tokens are outside the current scope.
+- TibiaData is the selected character/online provider. Wiki and market adapters have separate configuration and persisted snapshots.
+- Run a single active backend collector. Multiple replicas require distributed job leases and rate-limit coordination.
+- Project splitting, the next feature, hosting topology, and future bot authentication remain open choices.
 
-- Discord and TS3 bots can consume the same API later.
-- Authentication and authorization rules can be centralized.
-- Features can be added without tying them directly to the web frontend.
-- The project can demonstrate a more realistic multi-client architecture.
-
-## Proposed Milestones
-
-### 1. Repository And Solution Structure
-
-- Keep the frontend and backend in the same repository.
-- Use separate projects inside the same solution instead of separate repositories or separately deployed services for now.
-- Split the current single ASP.NET Core project into clearer projects when ready.
-- Target a structure similar to:
-  - `TibiaIntel.Api`
-  - `TibiaIntel.Application`
-  - `TibiaIntel.Domain`
-  - `TibiaIntel.Infrastructure`
-  - Angular client project under `client`, `frontend`, or similar
-  - `TibiaIntel.Tests`
-
-### 2. Backend Foundation
-
-- Set up ASP.NET Core API conventions.
-- Add configuration structure for development and production.
-- Add dependency injection organization.
-- Add logging.
-- Use PostgreSQL as the database provider.
-- Add Docker Compose for local PostgreSQL.
-- Add Entity Framework Core when persistence is needed.
-
-### 3. Authentication And Authorization
-
-- Use ASP.NET Core Identity for user management.
-- Implement user registration and login.
-- Use HttpOnly Identity cookies for browser sessions.
-- Validate antiforgery tokens for state-changing account requests.
-- Define basic roles or claims.
-- Protect selected API endpoints.
-
-### 4. Angular Frontend Foundation
-
-- Create the Angular app.
-- Set up routing.
-- Add HTTP client services for the API.
-- Add login and registration screens.
-- Send credentials with account requests and fetch CSRF tokens before writes.
-- Add route guards for authenticated pages.
-
-### 5. First Tibia Features
-
-Build character lookup as the first small end-to-end feature.
-
-Initial data to display:
-
-- Character name.
-- Level.
-- Vocation.
-- World.
-- Guild.
-- Residence or other basic profile fields if available from the external API.
-
-Later feature ideas:
-
-- Guild lookup.
-- World information.
-- Boss tracking.
-- Hunting spot notes.
-- Imbuement helper.
-- Charm or bestiary tracker.
-- Account dashboard for saved characters.
-
-The first feature should stay small enough to finish end-to-end across API, backend, frontend, and tests.
-
-### 6. External Integrations
-
-- Design API endpoints so bots can consume them without frontend-specific assumptions.
-- Consider API keys or bot-specific JWT clients later.
-- Keep Discord and TS3 bot integrations as future consumers, not part of the initial core.
-- Use an external Tibia API as the upstream data source once the specific API is selected.
-- Route frontend requests through `TibiaIntel.Api` instead of calling the external Tibia API directly from Angular.
-
-### 7. Testing And Portfolio Polish
-
-- Add backend unit tests for business logic.
-- Add API integration tests for important endpoints.
-- Add frontend tests once Angular structure is stable.
-- Add documentation for setup, running locally, and project decisions.
-- Keep commits and documentation clean enough to show the learning process.
-
-## Current Decisions
-
-- The frontend uses the Petrol & Lantern design system; see `FRONTEND_DESIGN.md`.
-- The first Tools feature is [NPC selling](features/NPC_SELLING.md), backed by the
-  separate [shared refresh service](DATA_REFRESH.md), including [world market averages](features/MARKET_VALUES.md).
-
-- API and backend code will be separate projects inside the same solution.
-- The frontend will live in the same repository as a separate Angular app.
-- PostgreSQL will be used as the database.
-- Docker will be used for local PostgreSQL setup.
-- Authentication will use ASP.NET Core Identity plus cookies for the browser frontend.
-- Character lookup will be the first feature.
-- Character data will come from an external Tibia API, selected later.
-
-## Open Decisions
-
-- Exact solution and folder naming.
-- Exact external Tibia API provider.
-- Authentication for future external clients, when concrete requirements exist.
-- Whether to add Docker Compose immediately or when persistence is first implemented.
-
-## Current Input Needed
-
-Before implementation starts, the most useful decisions are:
-
-- Pick final names for the backend projects and Angular folder.
-- Find the external Tibia API link.
-- Decide whether the first implementation should focus on project structure first or character lookup first.
+See [TODO](TODO.md) for practical remaining tasks, [frontend design](FRONTEND_DESIGN.md) for UI conventions, and [README](../README.md) for setup and verification commands.

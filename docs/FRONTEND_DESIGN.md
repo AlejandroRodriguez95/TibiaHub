@@ -24,4 +24,4 @@ Use real links for navigation, buttons for actions, explicit form labels, a skip
 
 ## Routes and maintenance
 
-`/` is the landing page; `/characters` is lookup and accepts a `name` query parameter. Keep login, registration, account, and admin flows intact. Reuse tokens and shared classes instead of adding page-specific color literals. New features should follow this document and update it when the design changes.
+`/` is the landing page; `/characters` is lookup and accepts a `name` query parameter. `/tools/npc-selling` is the NPC catalogue and `/tools/character-scan` is the authenticated scan UI. `/tools` and `/scans` redirect to those pages respectively. Keep login, registration, account preferences, and admin flows intact. Reuse tokens and shared classes instead of adding page-specific color literals. New features should follow this document and update it when the design changes.

@@ -540,25 +540,25 @@ Examples:
 Create a migration:
 
 ```powershell
-dotnet ef migrations add MigrationName
+dotnet ef migrations add MigrationName --project TibiaIntel
 ```
 
 Apply migrations to the database:
 
 ```powershell
-dotnet ef database update
+dotnet ef database update --project TibiaIntel
 ```
 
 List migrations:
 
 ```powershell
-dotnet ef migrations list
+dotnet ef migrations list --project TibiaIntel
 ```
 
 Remove the last migration if it has not been applied:
 
 ```powershell
-dotnet ef migrations remove
+dotnet ef migrations remove --project TibiaIntel
 ```
 
 Run the app:
@@ -571,10 +571,10 @@ dotnet run --project TibiaIntel
 
 The Angular frontend uses Identity cookies. `AddControllersWithViews()` supplies
 MVC's antiforgery validation filter services, used by
-`[AutoValidateAntiforgeryToken]` on `AccountController`; this does not require
+the global `AutoValidateAntiforgeryTokenAttribute` filter in `Program.cs`; this does not require
 adding HTML views. `AddAntiforgery` configures the `X-CSRF-TOKEN` request header.
 `GET /account/csrf` returns a token and sets its companion antiforgery cookie.
-The filter validates POST requests before executing the account action.
+The filter validates unsafe controller requests before executing their actions, including account POST requests.
 
 `ConfigureApplicationCookie` sets HttpOnly, SameSite=Lax, and secure transport
 outside Development, and returns API status codes instead of login redirects.

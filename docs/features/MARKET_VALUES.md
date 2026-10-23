@@ -1,6 +1,6 @@
 # World market values
 
-The NPC selling tool at `/tools` includes a **Market world** dropdown supplied by the independent world directory. Market collection intersects that directory with the provider's `/world_data` list. Worlds without collected market data remain unavailable; supported does not imply a recent scan.
+The NPC selling tool at `/tools/npc-selling` (`/tools` redirects there) includes a **Market world** dropdown supplied by the independent world directory. Market collection intersects that directory with the provider's `/world_data` list. Worlds without collected market data remain unavailable; supported does not imply a recent scan.
 
 ## Collection
 
