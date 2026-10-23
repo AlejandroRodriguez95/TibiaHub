@@ -1,3 +1,4 @@
+import { Vip } from './vip';
 import { Routes } from '@angular/router';
 import { Account } from './account';
 import { CharacterLookup } from './character-lookup';
@@ -7,6 +8,7 @@ import { Tools } from './tools';
 import { CharacterScan } from './character-scan';
 
 export const routes: Routes = [
+  { path: 'tools/vip', component: Vip, title: 'VIP list | TibiaIntel' },
   { path: 'admin', component: Admin, title: 'Admin panel | TibiaIntel' },
   { path: '', component: Home, title: 'Your next adventure | TibiaIntel' },
   { path: 'characters', component: CharacterLookup, title: 'Character lookup | TibiaIntel' },

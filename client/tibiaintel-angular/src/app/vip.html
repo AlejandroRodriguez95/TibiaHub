@@ -1,0 +1,66 @@
+<section class="lookup-panel" aria-labelledby="vip-title" [attr.aria-busy]="loading() || busy()">
+  <header class="page-header">
+    <p class="eyebrow">Tools / VIP list</p><h1 id="vip-title">Keep your people close.</h1>
+    <p class="intro">Track characters across worlds and group them under your own names. Your list is private.</p>
+  </header>
+  @if (loading()) { <p role="status">Loading your VIP list...</p> }
+  @if (error()) { <p class="message error" role="alert">{{ error() }}</p> }
+  @if (needsLogin()) {
+    <p class="message"><a routerLink="/login">Log in</a> or <a routerLink="/register">create an account</a> to use the VIP list.</p>
+  } @else if (list(); as list) {
+    <div class="vip-toolbar">
+      <p>{{ list.characters.length }} / {{ list.maxCharacters }} characters</p>
+      <p role="status">{{ connection() === 'connected' ? 'Live updates connected' : connection() === 'closed' ? 'Connection stopped. Retry to reconnect.' : 'Connecting to live updates...' }}</p>
+      <button type="button" class="secondary-button" (click)="retry()" [disabled]="loading() || busy()">Reconnect / reload</button>
+    </div>
+    <p class="muted vip-note">Online is green; offline is red. Unknown means the world data or connection is unavailable. A group is online when any member is online.</p>
+    <div class="vip-forms">
+      <form (ngSubmit)="add()">
+        <label for="vip-character">Character name</label>
+        <input id="vip-character" name="character" [(ngModel)]="name" maxlength="100" required autocomplete="off" placeholder="Lazy Snorlax" />
+        <button [disabled]="busy() || !name.trim() || list.characters.length >= list.maxCharacters">Add character</button>
+      </form>
+      <form (ngSubmit)="addGroup()">
+        <label for="vip-group">Custom group name</label>
+        <input id="vip-group" name="group" [(ngModel)]="groupName" maxlength="100" required placeholder="Alejandro" />
+        <button [disabled]="busy() || !groupName.trim() || list.groups.length >= list.maxGroups">Create group</button>
+        <small class="muted">{{ list.groups.length }} / {{ list.maxGroups }} groups</small>
+      </form>
+    </div>
+    @if (editing(); as entry) {
+      <section class="vip-editor" aria-labelledby="membership-title">
+        <h2 id="membership-title">Groups for {{ entry.name }}</h2>
+        <p class="muted">Select any number of groups. Clear all to leave this character ungrouped.</p>
+        @for (group of list.groups; track group.id) {
+          <label class="vip-checkbox"><input type="checkbox" [checked]="chosenGroups.includes(group.id)" (change)="choose(group.id, $any($event.target).checked)" />{{ group.name }}</label>
+        } @empty { <p>Create a group above first.</p> }
+        <div class="vip-actions"><button type="button" (click)="saveMemberships()" [disabled]="busy()">Save groups</button><button type="button" class="secondary-button" (click)="editing.set(null)">Cancel</button></div>
+      </section>
+    }
+    @for (group of list.groups; track group.id) {
+      <section class="vip-group">
+        <div class="vip-group-heading">
+          <button type="button" class="vip-expand secondary-button" [attr.aria-expanded]="!collapsed().has(group.id)" [attr.aria-controls]="'vip-group-' + group.id" (click)="toggle(group.id)">
+            {{ collapsed().has(group.id) ? '+' : '?' }} <strong [attr.data-status]="groupStatus(group)">{{ group.name }}</strong> ? {{ groupStatus(group) }} ({{ members(group).length }})
+          </button>
+          <div class="vip-actions"><button type="button" class="secondary-button" (click)="rename(group)" [disabled]="busy()" [attr.aria-label]="'Rename group ' + group.name">Rename</button><button type="button" class="secondary-button" (click)="deleteGroup(group)" [disabled]="busy()" [attr.aria-label]="'Delete group ' + group.name + ', keeping its characters'">Delete group</button></div>
+        </div>
+        @if (renaming() === group.id) {
+          <form class="vip-rename" (ngSubmit)="saveRename()"><label [for]="'rename-' + group.id">Group name</label><input [id]="'rename-' + group.id" name="rename" [(ngModel)]="renameName" maxlength="100" required /><button [disabled]="busy() || !renameName.trim()">Save name</button><button type="button" class="secondary-button" (click)="renaming.set(null)">Cancel</button></form>
+        }
+        <ul [id]="'vip-group-' + group.id" [hidden]="collapsed().has(group.id)">
+          @for (entry of members(group); track entry.id) {
+            <li><div><a [routerLink]="['/characters']" [queryParams]="{ name: entry.name }" [attr.data-status]="status(entry)">{{ entry.name }}</a><span class="muted"> {{ entry.world }} ? {{ status(entry) }}</span></div><div class="vip-actions"><button type="button" class="secondary-button" (click)="edit(entry)" [disabled]="busy()" [attr.aria-label]="'Edit groups for ' + entry.name">Groups</button><button type="button" class="secondary-button" (click)="remove(entry)" [disabled]="busy()" [attr.aria-label]="'Remove ' + entry.name + ' from VIP list'">Remove</button></div></li>
+          } @empty { <li class="muted">No characters in this group. Use a character's Groups button to add members.</li> }
+        </ul>
+      </section>
+    }
+    <section class="vip-group"><h2>Ungrouped</h2>
+      <ul>
+        @for (entry of ungrouped(); track entry.id) {
+          <li><div><a [routerLink]="['/characters']" [queryParams]="{ name: entry.name }" [attr.data-status]="status(entry)">{{ entry.name }}</a><span class="muted"> {{ entry.world }} ? {{ status(entry) }}</span></div><div class="vip-actions"><button type="button" class="secondary-button" (click)="edit(entry)" [disabled]="busy()" [attr.aria-label]="'Edit groups for ' + entry.name">Groups</button><button type="button" class="secondary-button" (click)="remove(entry)" [disabled]="busy()" [attr.aria-label]="'Remove ' + entry.name + ' from VIP list'">Remove</button></div></li>
+        } @empty { <li class="muted">{{ list.characters.length ? 'All your characters belong to groups.' : 'Your VIP list is empty. Add a character above.' }}</li> }
+      </ul>
+    </section>
+  } @else if (!loading()) { <button type="button" (click)="retry()">Try again</button> }
+</section>

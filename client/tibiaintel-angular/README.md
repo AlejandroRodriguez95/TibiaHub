@@ -24,6 +24,7 @@ The npm scripts use the local Angular CLI; no global CLI installation is require
 | `/` | Landing page and character search handoff. |
 | `/characters?name=Example` | Public character lookup; the name parameter runs a lookup. |
 | `/tools/npc-selling` | Public NPC purchases and world market comparisons. |
+| `/tools/vip` | Private VIP list and custom groups with live presence; login prompt for anonymous visitors. |
 | `/tools/character-scan` | Session timing results for signed-in users. |
 | `/login`, `/register`, `/account` | Account forms, session details, default-world preference, and logout. |
 | `/admin` | Admin user list. |
@@ -55,3 +56,5 @@ Build artifacts are written under `dist/tibiaintel-angular/`. No end-to-end test
 runner is configured.
 
 Use `npm exec ng generate component component-name` for local CLI scaffolding.
+
+The [VIP feature](../../docs/features/VIP_LIST.md) uses an RxJS SignalR event stream and Angular signals for displayed state. Its connection closes when the page is destroyed.

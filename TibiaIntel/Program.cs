@@ -1,3 +1,4 @@
+using TibiaIntel.Vip;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -68,6 +69,18 @@ builder.Services.AddHttpClient<OnlineWorldClient>(client =>
 builder.Services.AddScoped<SessionRecorder>();
 builder.Services.AddScoped<CharacterScanService>();
 builder.Services.AddHostedService<OnlineCollector>();
+builder.Services.AddOptions<VipOptions>().Bind(builder.Configuration.GetSection("Vip"))
+    .Validate(o => o.MaxCharactersPerUser > 0 && o.MaxGroupsPerUser > 0 && o.StatusMaxAgeSeconds >= 60,
+        "VIP limits must be positive and status freshness must be at least 60 seconds.").ValidateOnStart();
+builder.Services.AddHttpClient<IVipCharacterResolver, VipCharacterResolver>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(30);
+    client.DefaultRequestHeaders.UserAgent.ParseAdd("TibiaIntel/0.1 (VIP character lookup)");
+}).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false });
+builder.Services.AddScoped<VipService>();
+builder.Services.AddSignalR();
+builder.Services.AddSingleton<VipConnections>();
+builder.Services.AddHostedService<VipBroadcaster>();
 
 // The MVC antiforgery validation filter requires the view-feature services.
 builder.Services.AddControllersWithViews(options =>
@@ -154,6 +167,23 @@ if (app.Environment.IsDevelopment())
     app.UseCors("AngularDevelopment");
 }
 
+// CORS does not protect WebSocket handshakes. Restrict browser hub origins explicitly.
+app.Use(async (context, next) =>
+{
+    if (context.Request.Path.StartsWithSegments("/hubs/vip") && context.Request.Headers.TryGetValue("Origin", out var origin))
+    {
+        var sameOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
+        if (origin.Count != 1 || (origin[0] != sameOrigin
+            && !(app.Environment.IsDevelopment() && origin[0] == "http://localhost:4200")))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+    }
+    await next();
+});
+
+app.MapHub<VipHub>("/hubs/vip", options => options.CloseOnAuthenticationExpiration = true);
 app.MapGet("/", () => "Hello World!");
 app.UseAuthentication();
 app.UseAuthorization();

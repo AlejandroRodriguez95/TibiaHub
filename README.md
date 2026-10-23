@@ -9,7 +9,7 @@ The goal is to build a web application with reusable API functionality that can 
 - .NET 10 / ASP.NET Core API with EF Core and Identity cookie authentication.
 - Angular 22 frontend.
 - PostgreSQL 17, with Docker Compose for local development.
-- JSON snapshots for shared NPC, world, and market data; PostgreSQL for accounts and observed character sessions.
+- JSON snapshots for shared NPC, world, and market data; PostgreSQL for accounts, observed character sessions, and private VIP lists/groups.
 
 ```text
 TibiaIntel.sln
@@ -40,6 +40,14 @@ See [the roadmap](docs/ROADMAP.MD), [current next steps](docs/TODO.md), and
 [authentication details](docs/AUTHENTICATION.md).
 
 Character timing scans are available under **Tools > Character scan** (`/tools/character-scan`) for signed-in accounts. The collector monitors all active worlds and stores 14 days of observed sessions in PostgreSQL. Apply database migrations before starting the backend. See [character scans](docs/features/CHARACTER_SCANS.md) for scoring, exclusions, retention, and configuration.
+
+The private [VIP list](docs/features/VIP_LIST.md) at `/tools/vip` lets signed-in users
+track characters in custom groups with live online/offline/unknown status. Visitors
+see a login prompt. The default limit is configurable through
+`Vip:MaxCharactersPerUser` (1,000); apply the `AddVipLists` migration before starting
+against a database that does not have it yet. VIP behavior has been confirmed working
+in local use; [frontend clarity and polish](docs/FRONTEND_DESIGN.md#deferred-frontend-polish)
+across all features are deferred to a later pass.
 
 ## Running Locally
 

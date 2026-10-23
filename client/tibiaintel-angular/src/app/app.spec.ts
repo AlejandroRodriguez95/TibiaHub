@@ -18,7 +18,7 @@ describe('App navigation', () => {
     expect(links.map(link => link.getAttribute('href'))).toEqual(['/', '/characters', '/login', '/account']);
   });
 
-  it('groups both tools in a dropdown that closes with Escape and outside clicks', () => {
+  it('groups the tools in a dropdown that closes with Escape and outside clicks', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
@@ -29,7 +29,7 @@ describe('App navigation', () => {
     fixture.detectChanges();
     expect(toggle.getAttribute('aria-expanded')).toBe('true');
     expect(menu.hidden).toBe(false);
-    expect([...menu.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual(['/tools/npc-selling', '/tools/character-scan']);
+    expect([...menu.querySelectorAll('a')].map(a => a.getAttribute('href'))).toEqual(['/tools/npc-selling', '/tools/vip', '/tools/character-scan']);
     toggle.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
     fixture.detectChanges();
     expect(menu.hidden).toBe(true);

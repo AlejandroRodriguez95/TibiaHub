@@ -8,6 +8,7 @@
       <button #toolsToggle class="tools-toggle" type="button" [attr.aria-expanded]="toolsOpen()" aria-controls="tools-links" (click)="toolsOpen.update(toggleTools)">Tools <span aria-hidden="true">{{ toolsOpen() ? '▴' : '▾' }}</span></button>
         <div id="tools-links" class="tools-links" [hidden]="!toolsOpen()">
           <a routerLink="/tools/npc-selling" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="toolsOpen.set(false)">NPC selling</a>
+          <a routerLink="/tools/vip" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="toolsOpen.set(false)">VIP list</a>
           <a routerLink="/tools/character-scan" routerLinkActive="active" ariaCurrentWhenActive="page" (click)="toolsOpen.set(false)">Character scan</a>
         </div>
     </div>

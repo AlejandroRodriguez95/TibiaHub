@@ -15,11 +15,12 @@ Build a Tibia fansite as a learning and portfolio project, with an Angular front
 - Independent world/NPC/market jobs with durable JSON snapshots and [shared refresh infrastructure](DATA_REFRESH.md).
 - Authenticated [character scans](features/CHARACTER_SCANS.md) using 14 days of observed same-world session timing stored in PostgreSQL.
 - Backend unit/integration tests and Angular component tests.
+- Private [VIP lists](features/VIP_LIST.md), custom groups, configurable limits, and live presence through SignalR/RxJS.
 
 ## Next milestones
 
 1. Prepare account and hosting flows for deployment: email confirmation, password recovery, production API URLs, HTTPS, persistent Data Protection keys, SPA route fallback, and durable cache storage.
-2. Continue browser verification and improve feature coverage as behavior evolves. Keep setup instructions and feature contracts aligned with implementation.
+2. Revisit frontend clarity and polish across all features in a later pass. VIP behavior has been confirmed working; its current interface still needs revision. Specific redesign choices remain open; see [the frontend review scope](FRONTEND_DESIGN.md#deferred-frontend-polish). Continue browser verification and keep feature coverage and documentation aligned with implementation.
 3. Split the backend into API, Application, Domain, and Infrastructure projects if the growing codebase benefits from those boundaries. These projects do not exist yet.
 4. Choose another feature when requirements are concrete. Possibilities include guild/world lookup, saved characters, hunting notes, boss tracking, or imbuement helpers.
 5. Add bot integrations through the API when needed, with an authentication mechanism chosen for those clients.

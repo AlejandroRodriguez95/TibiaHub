@@ -3,7 +3,7 @@
 ## Current state
 
 - One .NET 10 backend project, Angular 22 frontend, and PostgreSQL 17 via Compose on port 5433.
-- EF migrations define Identity storage and character observation/session tables. Apply all migrations locally; their presence in Git does not mean a database has been updated.
+- EF migrations define Identity storage, character observation/session tables, and private VIP lists/groups/memberships. Apply all migrations locally; their presence in Git does not mean a database has been updated.
 - Public character lookup is at `/characters`; `/` is the landing page.
 - Registration, cookie login, session restoration, logout, and saved default-world preferences are implemented at `/login`, `/register`, and `/account`.
 - Account writes require CSRF tokens. Development CORS permits credentials from `http://localhost:4200`.
@@ -12,6 +12,13 @@
 - Signed-in users can query retained timing history at `/tools/character-scan`; `/scans` redirects there.
 - Shared world/NPC/market refresh jobs persist JSON snapshots. The separate online collector stores observed sessions in PostgreSQL with 14-day retention.
 - Backend and frontend tests cover account, admin, tools, and scan behavior. See [README](../README.md) for commands.
+- Private [VIP lists](features/VIP_LIST.md) support multiple group memberships and SignalR presence updates from existing world observations.
+
+## Deferred frontend work
+
+- VIP behavior was confirmed working as intended by the user on 2026-10-23; its current frontend needs clearer presentation and interaction.
+- Polish the frontend across all features in a later session. Specific layouts and interactions are still to be decided; see [the frontend review scope](FRONTEND_DESIGN.md#deferred-frontend-polish).
+- Keep the working VIP behavior, configurable character limit, multi-group membership, and live presence updates intact during that pass.
 
 ## Remaining work
 
