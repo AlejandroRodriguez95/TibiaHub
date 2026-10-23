@@ -11,7 +11,7 @@ interface ScanResult {
   lastObservation: string | null; observedLogouts: number; usableLogouts: number;
   candidates: { name: string; score: number; firstMinuteMatches: number; secondMinuteMatches: number }[];
 }
-const scanUrl = 'http://localhost:5267/tools/character-scan';
+const scanUrl = '/api/tools/character-scan';
 
 @Component({ selector: 'app-character-scan', imports: [FormsModule, RouterLink, DatePipe], templateUrl: './character-scan.html' })
 export class CharacterScan {

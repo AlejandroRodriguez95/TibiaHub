@@ -2,8 +2,8 @@ namespace TibiaIntel.Routes;
 
 public static class ApiRoutes
 {
-    public const string Account = "account";
-    public const string Character = "character";
+    public const string Account = "api/account";
+    public const string Character = "api/character";
 
     public static class AccountRoutes
     {

@@ -10,7 +10,7 @@ using TibiaIntel.DataRefresh.Worlds;
 namespace TibiaIntel.Controllers;
 
 [ApiController]
-[Route("tools/npc-selling")]
+[Route("api/tools/npc-selling")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class NpcSellingController(
     JsonSnapshotStore<NpcTradeCatalog> store,

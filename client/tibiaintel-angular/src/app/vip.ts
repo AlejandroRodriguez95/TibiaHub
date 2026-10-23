@@ -6,7 +6,7 @@ import { RouterLink } from '@angular/router';
 import { Subscription, finalize, switchMap } from 'rxjs';
 import { VipEntry, VipGroup, VipLive, VipSnapshot, VipState, groupStatus } from './vip-live';
 
-const api = 'http://localhost:5267/tools/vip';
+const api = '/api/tools/vip';
 @Component({ selector: 'app-vip', imports: [FormsModule, RouterLink], providers: [VipLive], templateUrl: './vip.html', styleUrl: './vip.scss' })
 export class Vip {
   private readonly http = inject(HttpClient);
@@ -78,7 +78,7 @@ export class Vip {
   private write(method: string, path: string, body?: unknown, done?: () => void): void {
     if (this.busy()) return;
     this.busy.set(true); this.error.set('');
-    this.http.get<{ token: string }>('http://localhost:5267/account/csrf', { withCredentials: true }).pipe(
+    this.http.get<{ token: string }>('/api/account/csrf', { withCredentials: true }).pipe(
       switchMap(csrf => this.http.request(method, api + path, { body, withCredentials: true, headers: { 'X-CSRF-TOKEN': csrf.token } })),
       switchMap(() => { done?.(); return this.http.get<VipSnapshot>(api, { withCredentials: true }); }),
       takeUntilDestroyed(this.destroy), finalize(() => this.busy.set(false)),

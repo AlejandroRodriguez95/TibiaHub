@@ -9,7 +9,7 @@ namespace TibiaIntel.Controllers;
 [ApiController]
 [Authorize(Roles = ApplicationRoles.Admin)]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-[Route("admin")]
+[Route("api/admin")]
 public sealed class AdminController(UserManager<ApplicationUser> userManager) : ControllerBase
 {
     [HttpGet("users")]

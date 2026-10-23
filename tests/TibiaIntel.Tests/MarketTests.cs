@@ -53,7 +53,7 @@ public sealed class MarketTests
             await prices.For("Antica").WriteAsync(new(now, key, new("Antica", [new(3364, 35000, 40000, now.AddDays(-5))])), default);
             await prices.For("Secura").WriteAsync(new(now, key, new("Secura", [new(3364, 30000, 40000, now)])), default);
 
-            var antica = await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling?world=antica");
+            var antica = await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling?world=antica");
             var item = antica.GetProperty("npcs")[0].GetProperty("items")[0];
             Assert.Equal("Antica", antica.GetProperty("selectedWorld").GetString());
             Assert.True(antica.GetProperty("marketIsStale").GetBoolean());
@@ -61,18 +61,18 @@ public sealed class MarketTests
             Assert.True(item.GetProperty("isMarketHigher").GetBoolean());
             Assert.True(item.GetProperty("isDeliveryTask").GetBoolean());
             Assert.Equal(JsonValueKind.Null, antica.GetProperty("npcs")[0].GetProperty("items")[1].GetProperty("averageMarketValue").ValueKind);
-            var secura = await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling?world=Secura");
+            var secura = await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling?world=Secura");
             Assert.False(secura.GetProperty("npcs")[0].GetProperty("items")[0].GetProperty("isMarketHigher").GetBoolean());
             Assert.False(secura.GetProperty("marketIsStale").GetBoolean());
             Assert.Equal(1, services.GetRequiredService<WorldRequestTracker>().Count("Antica"));
             Assert.Equal(1, services.GetRequiredService<WorldRequestTracker>().Count("Secura"));
-            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/tools/npc-selling?world=NotAWorld")).StatusCode);
-            var unselected = await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling");
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync("/api/tools/npc-selling?world=NotAWorld")).StatusCode);
+            var unselected = await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling");
             Assert.False(unselected.GetProperty("marketAvailable").GetBoolean());
 
             using var sellApp = CreateApp(cache, "sell");
             using var sellClient = sellApp.CreateClient();
-            var sell = await sellClient.GetFromJsonAsync<JsonElement>("/tools/npc-selling?world=Secura");
+            var sell = await sellClient.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling?world=Secura");
             Assert.Equal(40000, sell.GetProperty("npcs")[0].GetProperty("items")[0].GetProperty("averageMarketValue").GetInt64());
         }
         finally { if (Directory.Exists(cache)) Directory.Delete(cache, recursive: true); }

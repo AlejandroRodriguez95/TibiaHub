@@ -35,7 +35,7 @@ there are no route guards. The API enforces protected endpoint access.
 
 ## Authentication and API configuration
 
-API URLs currently target `http://localhost:5267`; configure them for production.
+API requests use relative `/api` URLs. The development server proxies these to `http://localhost:5267`, including WebSockets. In production, forward `/api/*` to the backend without stripping the prefix and serve other paths with an Angular index.html fallback.
 Account and authenticated tool requests send credentials. The browser manages the
 HttpOnly Identity cookie; credentials are not stored in localStorage. Each account
 write first obtains a fresh token from `/account/csrf`, then sends `X-CSRF-TOKEN`.

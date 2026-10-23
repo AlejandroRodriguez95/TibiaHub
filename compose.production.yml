@@ -1,0 +1,50 @@
+name: tibiaintel-production
+
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: tibiaintel
+      POSTGRES_USER: tibiaintel
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your deployment environment}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tibiaintel -d tibiaintel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: TibiaIntel/Dockerfile
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DataRefresh__CacheDirectory: /var/lib/tibiaintel/refresh
+      ReverseProxy__KnownProxy: ${REVERSE_PROXY_IP:-}
+      AllowedHosts: tibiaintel.net;www.tibiaintel.net;localhost;127.0.0.1
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=tibiaintel;Username=tibiaintel;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5267:8080"
+    volumes:
+      - refresh_data:/var/lib/tibiaintel/refresh
+      - protection_keys:/var/lib/tibiaintel/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: client/tibiaintel-angular/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
+
+volumes:
+  postgres_data:
+  refresh_data:
+  protection_keys:

@@ -17,18 +17,18 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task User_list_requires_admin_and_returns_only_public_projection()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var anonymous = await client.GetAsync("/admin/users");
+        using var anonymous = await client.GetAsync("/api/admin/users");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
         Assert.Null(anonymous.Headers.Location);
 
         var credentials = new { Email = "admin@example.com", Password = ValidPassword };
-        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        using var registration = await client.PostAsJsonAsync("/api/account/register", credentials);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
-        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        using var login = await client.PostAsJsonAsync("/api/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        var regular = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        var regular = await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount");
         Assert.False(regular.GetProperty("isAdmin").GetBoolean());
-        using var forbidden = await client.GetAsync("/admin/users");
+        using var forbidden = await client.GetAsync("/api/admin/users");
         Assert.Equal(HttpStatusCode.Forbidden, forbidden.StatusCode);
         Assert.Null(forbidden.Headers.Location);
 
@@ -48,11 +48,11 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
 
         // Existing cookies keep their claims until the user signs in again.
         await RegistrationFixture.RefreshCsrfAsync(client);
-        using var adminLogin = await client.PostAsJsonAsync("/account/login", credentials);
+        using var adminLogin = await client.PostAsJsonAsync("/api/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, adminLogin.StatusCode);
-        var me = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        var me = await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount");
         Assert.True(me.GetProperty("isAdmin").GetBoolean());
-        using var response = await client.GetAsync("/admin/users");
+        using var response = await client.GetAsync("/api/admin/users");
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Contains("no-store", response.Headers.CacheControl!.ToString());
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -67,34 +67,34 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Default_world_requires_login_validates_list_and_persists()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/account/default-world", new { world = "Antica" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsJsonAsync("/api/account/default-world", new { world = "Antica" })).StatusCode);
         var credentials = new { Email = "world@example.com", Password = ValidPassword };
-        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/account/register", credentials)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/login", credentials)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/account/register", credentials)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/account/login", credentials)).StatusCode);
         await RegistrationFixture.RefreshCsrfAsync(client);
         var services = fixture.Services;
         var key = services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<TibiaIntel.DataRefresh.Worlds.WorldSourceOptions>>().CurrentValue.SourceKey;
         await services.GetRequiredService<TibiaIntel.DataRefresh.JsonSnapshotStore<TibiaIntel.DataRefresh.Worlds.WorldList>>()
             .WriteAsync(new(DateTimeOffset.UtcNow, key, new(["Antica", "Secura"])), default);
-        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/account/default-world", new { world = "Invalid" })).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = "antica" })).StatusCode);
-        var account = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/account/default-world", new { world = "Invalid" })).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/account/default-world", new { world = "antica" })).StatusCode);
+        var account = await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount");
         Assert.Equal("Antica", account.GetProperty("defaultWorld").GetString());
         var npcKey = services.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<TibiaIntel.DataRefresh.NpcTrades.NpcTradeSourceOptions>>().CurrentValue.SourceKey;
         await services.GetRequiredService<TibiaIntel.DataRefresh.JsonSnapshotStore<TibiaIntel.DataRefresh.NpcTrades.NpcTradeCatalog>>()
             .WriteAsync(new(DateTimeOffset.UtcNow, npcKey, new([])), default);
-        Assert.Equal("Antica", (await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling")).GetProperty("selectedWorld").GetString());
-        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling?world=Secura")).GetProperty("selectedWorld").GetString());
+        Assert.Equal("Antica", (await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling")).GetProperty("selectedWorld").GetString());
+        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling?world=Secura")).GetProperty("selectedWorld").GetString());
         using (var scope = services.CreateScope())
         {
             var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var user = await users.FindByEmailAsync(credentials.Email);
             Assert.Contains(await users.GetClaimsAsync(user!), claim => claim.Type == "tibiaintel:default-world" && claim.Value == "Antica");
         }
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = "Secura" })).StatusCode);
-        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/account/myaccount")).GetProperty("defaultWorld").GetString());
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/default-world", new { world = (string?)null })).StatusCode);
-        Assert.Equal(JsonValueKind.Null, (await client.GetFromJsonAsync<JsonElement>("/account/myaccount")).GetProperty("defaultWorld").ValueKind);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/account/default-world", new { world = "Secura" })).StatusCode);
+        Assert.Equal("Secura", (await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount")).GetProperty("defaultWorld").GetString());
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/account/default-world", new { world = (string?)null })).StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount")).GetProperty("defaultWorld").ValueKind);
     }
 
     public Task InitializeAsync() => fixture.ResetUsersAsync();
@@ -104,7 +104,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Valid_registration_returns_created_and_stores_hashed_password()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var response = await client.PostAsJsonAsync("/account/register", new
+        using var response = await client.PostAsJsonAsync("/api/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
         });
@@ -114,7 +114,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
         var id = body.GetProperty("id").GetString();
         Assert.False(string.IsNullOrWhiteSpace(id));
         Assert.Equal("player@example.com", body.GetProperty("email").GetString());
-        Assert.Equal($"/account/users/{id}", response.Headers.Location?.OriginalString);
+        Assert.Equal($"/api/account/users/{id}", response.Headers.Location?.OriginalString);
         Assert.False(body.TryGetProperty("password", out _));
         Assert.False(body.TryGetProperty("passwordHash", out _));
 
@@ -135,13 +135,13 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Duplicate_email_returns_bad_request_without_creating_another_user(string email)
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var first = await client.PostAsJsonAsync("/account/register", new
+        using var first = await client.PostAsJsonAsync("/api/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
         });
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
 
-        using var response = await client.PostAsJsonAsync("/account/register", new { Email = email, Password = ValidPassword });
+        using var response = await client.PostAsJsonAsync("/api/account/register", new { Email = email, Password = ValidPassword });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -160,7 +160,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Invalid_request_returns_validation_errors_without_creating_user(string? email, string? password)
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var response = await client.PostAsJsonAsync("/account/register", new { Email = email, Password = password });
+        using var response = await client.PostAsJsonAsync("/api/account/register", new { Email = email, Password = password });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         var body = await response.Content.ReadFromJsonAsync<JsonElement>();
@@ -177,7 +177,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Weak_password_returns_identity_error_without_creating_user(string password, string expectedCode)
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var response = await client.PostAsJsonAsync("/account/register", new
+        using var response = await client.PostAsJsonAsync("/api/account/register", new
         {
             Email = "player@example.com", Password = password
         });
@@ -193,13 +193,13 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Valid_login_returns_user_and_authentication_cookie()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var registration = await client.PostAsJsonAsync("/account/register", new
+        using var registration = await client.PostAsJsonAsync("/api/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
         });
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
 
-        using var response = await client.PostAsJsonAsync("/account/login", new
+        using var response = await client.PostAsJsonAsync("/api/account/login", new
         {
             Email = "PLAYER@example.com", Password = ValidPassword
         });
@@ -219,13 +219,13 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Invalid_credentials_return_unauthorized_without_cookie(string email, string password)
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var registration = await client.PostAsJsonAsync("/account/register", new
+        using var registration = await client.PostAsJsonAsync("/api/account/register", new
         {
             Email = "player@example.com", Password = ValidPassword
         });
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
 
-        using var response = await client.PostAsJsonAsync("/account/login", new { Email = email, Password = password });
+        using var response = await client.PostAsJsonAsync("/api/account/login", new { Email = email, Password = password });
 
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.False(response.Headers.Contains("Set-Cookie"));
@@ -238,7 +238,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Invalid_login_request_returns_bad_request(string? email, string password)
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var response = await client.PostAsJsonAsync("/account/login", new { Email = email, Password = password });
+        using var response = await client.PostAsJsonAsync("/api/account/login", new { Email = email, Password = password });
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.False(response.Headers.Contains("Set-Cookie"));
@@ -254,27 +254,27 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     public async Task Cookie_identifies_user_until_logout()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        using var anonymous = await client.GetAsync("/account/myaccount");
+        using var anonymous = await client.GetAsync("/api/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, anonymous.StatusCode);
         Assert.Null(anonymous.Headers.Location);
         var credentials = new { Email = "session@example.com", Password = ValidPassword };
-        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        using var registration = await client.PostAsJsonAsync("/api/account/register", credentials);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
-        using var afterRegistration = await client.GetAsync("/account/myaccount");
+        using var afterRegistration = await client.GetAsync("/api/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, afterRegistration.StatusCode);
-        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        using var login = await client.PostAsJsonAsync("/api/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var expected = await login.Content.ReadFromJsonAsync<JsonElement>();
-        var actual = await client.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        var actual = await client.GetFromJsonAsync<JsonElement>("/api/account/myaccount");
         Assert.Equal(expected.GetProperty("id").GetString(), actual.GetProperty("id").GetString());
         Assert.Equal(credentials.Email, actual.GetProperty("email").GetString());
         using var otherClient = await fixture.CreateAccountClientAsync();
-        using var isolated = await otherClient.GetAsync("/account/myaccount");
+        using var isolated = await otherClient.GetAsync("/api/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, isolated.StatusCode);
         await RegistrationFixture.RefreshCsrfAsync(client);
-        using var logout = await client.PostAsync("/account/logout", null);
+        using var logout = await client.PostAsync("/api/account/logout", null);
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
-        using var afterLogout = await client.GetAsync("/account/myaccount");
+        using var afterLogout = await client.GetAsync("/api/account/myaccount");
         Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
     }
 
@@ -285,7 +285,7 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     {
         using var client = await fixture.CreateAccountClientAsync();
         client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
-        using var response = await client.PostAsJsonAsync($"/account/{action}", new
+        using var response = await client.PostAsJsonAsync($"/api/account/{action}", new
         {
             Email = "csrf@example.com", Password = ValidPassword
         });
@@ -298,15 +298,15 @@ public sealed class RegistrationTests(RegistrationFixture fixture) : IClassFixtu
     {
         using var client = await fixture.CreateAccountClientAsync();
         var credentials = new { Email = "csrf@example.com", Password = ValidPassword };
-        using var registration = await client.PostAsJsonAsync("/account/register", credentials);
+        using var registration = await client.PostAsJsonAsync("/api/account/register", credentials);
         Assert.Equal(HttpStatusCode.Created, registration.StatusCode);
-        using var login = await client.PostAsJsonAsync("/account/login", credentials);
+        using var login = await client.PostAsJsonAsync("/api/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", "invalid");
-        using var logout = await client.PostAsync("/account/logout", null);
+        using var logout = await client.PostAsync("/api/account/logout", null);
         Assert.Equal(HttpStatusCode.BadRequest, logout.StatusCode);
-        using var me = await client.GetAsync("/account/myaccount");
+        using var me = await client.GetAsync("/api/account/myaccount");
         Assert.Equal(HttpStatusCode.OK, me.StatusCode);
     }
 }

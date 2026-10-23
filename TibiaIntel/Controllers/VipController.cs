@@ -8,7 +8,7 @@ namespace TibiaIntel.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("tools/vip")]
+[Route("api/tools/vip")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class VipController(VipService vip) : ControllerBase
 {

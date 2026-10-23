@@ -6,7 +6,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, switchMap } from 'rxjs';
 
 interface AccountUser { id: string; email: string; isAdmin: boolean; defaultWorld?: string | null; worlds?: string[]; }
-const accountUrl = 'http://localhost:5267/account';
+const accountUrl = '/api/account';
 
 @Component({
   selector: 'app-account',

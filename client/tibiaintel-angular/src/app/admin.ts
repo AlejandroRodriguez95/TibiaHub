@@ -26,7 +26,7 @@ export class Admin {
     this.error.set('');
     this.status.set(0);
     this.users.set([]);
-    this.http.get<AdminUser[]>('http://localhost:5267/admin/users', { withCredentials: true })
+    this.http.get<AdminUser[]>('/api/admin/users', { withCredentials: true })
       .pipe(takeUntilDestroyed(this.destroyRef), finalize(() => this.loading.set(false)))
       .subscribe({
         next: users => this.users.set(users),

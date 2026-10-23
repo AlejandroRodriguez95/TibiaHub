@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { CharacterScan } from './character-scan';
 
 describe('Character scans', () => {
-  const url = 'http://localhost:5267/tools/character-scan';
+  const url = '/api/tools/character-scan';
   beforeEach(() => TestBed.configureTestingModule({ imports: [CharacterScan], providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])] }));
   afterEach(() => TestBed.inject(HttpTestingController).verify());
 

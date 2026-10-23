@@ -78,13 +78,13 @@ public sealed class NpcSellingTests
             using (var app = CreateApp(cache))
             {
                 using var client = app.CreateClient();
-                var missing = await client.GetAsync("/tools/npc-selling");
+                var missing = await client.GetAsync("/api/tools/npc-selling");
                 Assert.Equal(HttpStatusCode.ServiceUnavailable, missing.StatusCode);
                 var store = app.Services.GetRequiredService<JsonSnapshotStore<NpcTradeCatalog>>();
                 var options = app.Services.GetRequiredService<IOptionsMonitor<NpcTradeSourceOptions>>().CurrentValue;
                 var catalog = new NpcTradeCatalog([new("Rashid", [new("Golden Legs", 30000, null, true)])]);
                 await store.WriteAsync(new(DateTimeOffset.UtcNow.AddHours(-26), options.SourceKey, catalog), default);
-                var response = await client.GetFromJsonAsync<JsonElement>("/tools/npc-selling");
+                var response = await client.GetFromJsonAsync<JsonElement>("/api/tools/npc-selling");
                 Assert.True(response.GetProperty("isStale").GetBoolean());
                 Assert.False(response.GetProperty("marketValuesArePlaceholders").GetBoolean());
                 var item = response.GetProperty("npcs")[0].GetProperty("items")[0];
@@ -95,10 +95,10 @@ public sealed class NpcSellingTests
             // A second host must load the saved file rather than lose data on restart.
             using var restarted = CreateApp(cache);
             using var restartedClient = restarted.CreateClient();
-            Assert.Equal(HttpStatusCode.OK, (await restartedClient.GetAsync("/tools/npc-selling")).StatusCode);
+            Assert.Equal(HttpStatusCode.OK, (await restartedClient.GetAsync("/api/tools/npc-selling")).StatusCode);
             using var changed = CreateApp(cache, "Yasir");
             using var changedClient = changed.CreateClient();
-            Assert.Equal(HttpStatusCode.ServiceUnavailable, (await changedClient.GetAsync("/tools/npc-selling")).StatusCode);
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, (await changedClient.GetAsync("/api/tools/npc-selling")).StatusCode);
         }
         finally { if (Directory.Exists(cache)) Directory.Delete(cache, recursive: true); }
     }
@@ -133,10 +133,13 @@ public sealed class NpcSellingTests
 
     private static WebApplicationFactory<Program> CreateApp(string cache, string npc = "Rashid") =>
         new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
             builder.ConfigureAppConfiguration((_, config) => config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["DataRefresh:Enabled"] = "false",
-                ["DataRefresh:CacheDirectory"] = cache,
-                ["NpcTradeSource:NpcNames:0"] = npc
-            })));
+                ["DataRefresh:CacheDirectory"] = cache
+            }));
+            // Replace the full list so production NPC additions cannot affect this fixture.
+            builder.ConfigureServices(services => services.PostConfigure<NpcTradeSourceOptions>(options => options.NpcNames = [npc]));
+        });
 }

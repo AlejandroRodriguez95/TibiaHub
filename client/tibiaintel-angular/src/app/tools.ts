@@ -67,7 +67,7 @@ export class Tools implements OnDestroy {
     this.loading.set(true);
     this.error.set('');
     const world = this.selectedWorld();
-    this.request = this.http.get<Catalog>('http://localhost:5267/tools/npc-selling', {
+    this.request = this.http.get<Catalog>('/api/tools/npc-selling', {
       withCredentials: true,
       params: world ? { world } : {},
     }).subscribe({

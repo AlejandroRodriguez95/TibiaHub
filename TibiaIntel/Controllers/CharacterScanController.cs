@@ -9,7 +9,7 @@ namespace TibiaIntel.Controllers;
 
 [ApiController]
 [Authorize]
-[Route("tools/character-scan")]
+[Route("api/tools/character-scan")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
 public sealed class CharacterScanController(ApplicationDbContext db, CharacterScanService scans, TimeProvider clock) : ControllerBase
 {

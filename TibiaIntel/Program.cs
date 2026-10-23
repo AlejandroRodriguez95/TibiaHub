@@ -11,11 +11,35 @@ using TibiaIntel.DataRefresh.NpcTrades;
 using TibiaIntel.DataRefresh.Market;
 using TibiaIntel.DataRefresh.Worlds;
 using TibiaIntel.CharacterScanning;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Configuration.AddJsonFile("DataRefresh/refresh-sources.json", optional: false, reloadOnChange: true);
 // Reapply overrides so deployment environment variables and command-line switches win.
 builder.Configuration.AddEnvironmentVariables().AddCommandLine(args);
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.ForwardLimit = 1;
+    var proxy = builder.Configuration["ReverseProxy:KnownProxy"];
+    if (!string.IsNullOrWhiteSpace(proxy))
+    {
+        var address = IPAddress.Parse(proxy);
+        options.KnownProxies.Add(address);
+        if (address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+            options.KnownProxies.Add(address.MapToIPv6());
+    }
+});
+var keyDirectory = builder.Configuration["DataProtection:KeysDirectory"];
+if (!string.IsNullOrWhiteSpace(keyDirectory))
+{
+    Directory.CreateDirectory(keyDirectory);
+    builder.Services.AddDataProtection()
+        .SetApplicationName("TibiaIntel")
+        .PersistKeysToFileSystem(new DirectoryInfo(keyDirectory));
+}
 builder.Services.Configure<RefreshOptions>(builder.Configuration.GetSection("DataRefresh"));
 builder.Services.Configure<NpcTradeSourceOptions>(builder.Configuration.GetSection("NpcTradeSource"));
 builder.Services.Configure<MarketSourceOptions>(builder.Configuration.GetSection("MarketSource"));
@@ -156,6 +180,7 @@ builder.Services.AddHttpClient<TibiaDataClient>((serviceProvider, client) =>
 });
 
 var app = builder.Build();
+app.UseForwardedHeaders();
 
 if (await CommandHandler.HandleAsync(app.Services, args))
 {
@@ -170,7 +195,7 @@ if (app.Environment.IsDevelopment())
 // CORS does not protect WebSocket handshakes. Restrict browser hub origins explicitly.
 app.Use(async (context, next) =>
 {
-    if (context.Request.Path.StartsWithSegments("/hubs/vip") && context.Request.Headers.TryGetValue("Origin", out var origin))
+    if (context.Request.Path.StartsWithSegments("/api/hubs/vip") && context.Request.Headers.TryGetValue("Origin", out var origin))
     {
         var sameOrigin = $"{context.Request.Scheme}://{context.Request.Host}";
         if (origin.Count != 1 || (origin[0] != sameOrigin
@@ -183,7 +208,7 @@ app.Use(async (context, next) =>
     await next();
 });
 
-app.MapHub<VipHub>("/hubs/vip", options => options.CloseOnAuthenticationExpiration = true);
+app.MapHub<VipHub>("/api/hubs/vip", options => options.CloseOnAuthenticationExpiration = true);
 app.MapGet("/", () => "Hello World!");
 app.UseAuthentication();
 app.UseAuthorization();

@@ -80,19 +80,19 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
         var client = fixture.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost"), AllowAutoRedirect = false });
         await RegistrationFixture.RefreshCsrfAsync(client);
         var credentials = new { email = Guid.NewGuid() + "@example.com", password = "ValidPassword123!" };
-        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/account/register", credentials)).StatusCode);
-        var login = await client.PostAsJsonAsync("/account/login", credentials);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/account/register", credentials)).StatusCode);
+        var login = await client.PostAsJsonAsync("/api/account/login", credentials);
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
         var cookie = string.Join("; ", login.Headers.GetValues("Set-Cookie").Select(c => c.Split(';')[0]));
         await RegistrationFixture.RefreshCsrfAsync(client);
         return (client, cookie);
     }
-    private static async Task<VipSnapshot> Read(HttpClient client) => (await client.GetFromJsonAsync<VipSnapshot>("/tools/vip"))!;
+    private static async Task<VipSnapshot> Read(HttpClient client) => (await client.GetFromJsonAsync<VipSnapshot>("/api/tools/vip"))!;
     private static async Task Add(HttpClient client, string name) =>
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/tools/vip/characters", new { name })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/tools/vip/characters", new { name })).StatusCode);
     private static async Task<long> Group(HttpClient client, string name)
     {
-        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/tools/vip/groups", new { name })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsJsonAsync("/api/tools/vip/groups", new { name })).StatusCode);
         return (await Read(client)).Groups.Single(g => g.Name == name).Id;
     }
 
@@ -100,14 +100,14 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
     public async Task AnonymousAccessAndCrossOriginHubAreRejectedAndWritesRequireCsrf()
     {
         using var anon = fixture.CreateClient();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anon.GetAsync("/tools/vip")).StatusCode);
-        Assert.Equal(HttpStatusCode.Unauthorized, (await anon.PostAsync("/hubs/vip/negotiate?negotiateVersion=1", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anon.GetAsync("/api/tools/vip")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await anon.PostAsync("/api/hubs/vip/negotiate?negotiateVersion=1", null)).StatusCode);
         var (client, _) = await Account();
         using (client)
         {
             client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
-            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/tools/vip/characters", new { name = "Bob" })).StatusCode);
-            using var request = new HttpRequestMessage(HttpMethod.Post, "/hubs/vip/negotiate?negotiateVersion=1");
+            Assert.Equal(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/tools/vip/characters", new { name = "Bob" })).StatusCode);
+            using var request = new HttpRequestMessage(HttpMethod.Post, "/api/hubs/vip/negotiate?negotiateVersion=1");
             request.Headers.Add("Origin", "https://untrusted.example");
             Assert.Equal(HttpStatusCode.Forbidden, (await client.SendAsync(request)).StatusCode);
         }
@@ -121,23 +121,23 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
         await Add(owner, "Lazy Snorlax"); await Add(owner, "Krieghor");
         var first = await Group(owner, "Alejandro"); var second = await Group(owner, "Friends");
         var entry = (await Read(owner)).Characters.Single(c => c.Name == "Lazy Snorlax");
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsJsonAsync($"/tools/vip/characters/{entry.Id}/groups", new { groupIds = new[] { first, second, first } })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsJsonAsync($"/api/tools/vip/characters/{entry.Id}/groups", new { groupIds = new[] { first, second, first } })).StatusCode);
         var snapshot = await Read(owner);
         Assert.Equal(2, snapshot.Characters.Length); Assert.Equal(2, snapshot.MaxCharacters);
         Assert.Equal(new[] { first, second }, snapshot.Characters.Single(c => c.Id == entry.Id).GroupIds);
         Assert.All(snapshot.Characters, c => Assert.Equal("unknown", c.Status));
         Assert.Empty((await Read(other)).Characters);
-        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/tools/vip/characters/{entry.Id}")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsJsonAsync($"/tools/vip/groups/{first}", new { name = "Hijacked" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.DeleteAsync($"/api/tools/vip/characters/{entry.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsJsonAsync($"/api/tools/vip/groups/{first}", new { name = "Hijacked" })).StatusCode);
         await Add(other, "Bob"); var foreign = (await Read(other)).Characters.Single();
-        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsJsonAsync($"/tools/vip/characters/{foreign.Id}/groups", new { groupIds = new[] { first } })).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsJsonAsync($"/tools/vip/groups/{first}", new { name = "Renamed" })).StatusCode);
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/tools/vip/groups/{first}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await other.PutAsJsonAsync($"/api/tools/vip/characters/{foreign.Id}/groups", new { groupIds = new[] { first } })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.PutAsJsonAsync($"/api/tools/vip/groups/{first}", new { name = "Renamed" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/tools/vip/groups/{first}")).StatusCode);
         Assert.Equal(new[] { second }, (await Read(owner)).Characters.Single(c => c.Id == entry.Id).GroupIds);
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/tools/vip/groups/{second}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/tools/vip/groups/{second}")).StatusCode);
         Assert.Equal(2, (await Read(owner)).Characters.Length);
         Assert.All((await Read(owner)).Characters, c => Assert.Empty(c.GroupIds));
-        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/tools/vip/characters/{entry.Id}")).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await owner.DeleteAsync($"/api/tools/vip/characters/{entry.Id}")).StatusCode);
         Assert.Single((await Read(owner)).Characters);
     }
 
@@ -145,16 +145,16 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
     public async Task InvalidCharactersDuplicatesAndConcurrentAddsRespectConfigurableLimit()
     {
         var (client, _) = await Account(); using var owner = client;
-        Assert.Equal(HttpStatusCode.NotFound, (await owner.PostAsJsonAsync("/tools/vip/characters", new { name = "Missing" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await owner.PostAsJsonAsync("/api/tools/vip/characters", new { name = "Missing" })).StatusCode);
         await Add(owner, "Lazy Snorlax");
-        Assert.Equal(HttpStatusCode.Conflict, (await owner.PostAsJsonAsync("/tools/vip/characters", new { name = "lazy snorlax" })).StatusCode);
-        var responses = await Task.WhenAll(owner.PostAsJsonAsync("/tools/vip/characters", new { name = "Krieghor" }),
-            owner.PostAsJsonAsync("/tools/vip/characters", new { name = "Bob" }));
+        Assert.Equal(HttpStatusCode.Conflict, (await owner.PostAsJsonAsync("/api/tools/vip/characters", new { name = "lazy snorlax" })).StatusCode);
+        var responses = await Task.WhenAll(owner.PostAsJsonAsync("/api/tools/vip/characters", new { name = "Krieghor" }),
+            owner.PostAsJsonAsync("/api/tools/vip/characters", new { name = "Bob" }));
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.NoContent);
         Assert.Single(responses, r => r.StatusCode == HttpStatusCode.BadRequest);
         Assert.Equal(2, (await Read(owner)).Characters.Length);
         for (var i = 0; i < 3; i++) await Group(owner, "Group " + i);
-        Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync("/tools/vip/groups", new { name = "Over limit" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await owner.PostAsJsonAsync("/api/tools/vip/groups", new { name = "Over limit" })).StatusCode);
     }
 
     [Theory]
@@ -177,7 +177,7 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
     {
         var (client, _) = await Account(); using var owner = client;
         await Add(owner, "Lazy Snorlax"); await Add(owner, "Krieghor");
-        var user = await owner.GetFromJsonAsync<JsonElement>("/account/myaccount");
+        var user = await owner.GetFromJsonAsync<JsonElement>("/api/account/myaccount");
         var userId = user.GetProperty("id").GetString()!;
         async Task<VipSnapshot> ReadEnabled()
         {
@@ -222,7 +222,7 @@ public sealed class VipTests(VipFixture fixture) : IClassFixture<VipFixture>, IA
     {
         var (client, cookie) = await Account(); using var owner = client;
         await Add(owner, "Lazy Snorlax");
-        await using var connection = new HubConnectionBuilder().WithUrl("https://localhost/hubs/vip", options =>
+        await using var connection = new HubConnectionBuilder().WithUrl("https://localhost/api/hubs/vip", options =>
         {
             options.Transports = HttpTransportType.LongPolling;
             options.HttpMessageHandlerFactory = _ => fixture.Server.CreateHandler();

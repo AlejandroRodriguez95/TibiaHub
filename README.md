@@ -86,6 +86,7 @@ you do not need to install Angular CLI globally. If CMD reports that `npm` is no
 recognized, check the Node.js installation and `PATH` first.
 
 Open `http://localhost:4200`; the API runs on `http://localhost:5267`.
+Angular uses relative `/api` URLs, including `/api/hubs/vip` for live updates. The development server proxies these to the API. Restart `npm start` after changing proxy configuration. In production, forward `/api/*` to the backend without stripping the prefix and serve other paths with an Angular `index.html` fallback.
 Use Node.js 22.22.3+, 24.15.0+, or another version supported by Angular 22.
 The Development connection string already matches Compose's default database on port
 5433. `.env.example` documents Compose overrides; a root `.env` is read by Compose,
@@ -95,6 +96,11 @@ credentials outside source control. The project does not currently declare a
 `UserSecretsId`; initialize user secrets before using that storage option.
 
 ## Admin panel
+
+For Debian production container builds, persistent storage, and the existing host
+Nginx integration, see [deployment instructions](deploy/README.md).
+For an explanation of containers, production settings, persistent storage, and
+what remains before going live, see [how deployment works](docs/DEPLOYMENT_EXPLAINED.md).
 
 Register an account normally, then grant it the Identity `Admin` role from a trusted
 terminal with access to the application's database:

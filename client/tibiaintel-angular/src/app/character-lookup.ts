@@ -67,7 +67,7 @@ export class CharacterLookup implements OnInit {
 
     this.http
       .get<TibiaDataCharacterResponse>(
-        `http://localhost:5267/character/${encodeURIComponent(name)}`
+        `/api/character/${encodeURIComponent(name)}`
       )
       .pipe(finalize(() => this.isLoading.set(false)))
       .subscribe({

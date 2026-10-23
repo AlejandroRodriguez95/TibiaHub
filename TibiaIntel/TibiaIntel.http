@@ -1,4 +1,4 @@
 @TibiaIntel_HostAddress = http://localhost:5267
 
-GET {{TibiaIntel_HostAddress}}/character/Lazy+Snorlax
+GET {{TibiaIntel_HostAddress}}/api/character/Lazy+Snorlax
 Accept: application/json

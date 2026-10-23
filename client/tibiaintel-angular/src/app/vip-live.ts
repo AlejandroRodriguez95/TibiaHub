@@ -53,7 +53,7 @@ export class VipLive {
     return new Observable(observer => {
       let disposed = false;
       const connection = new HubConnectionBuilder()
-        .withUrl('http://localhost:5267/hubs/vip', { withCredentials: true })
+        .withUrl('/api/hubs/vip', { withCredentials: true })
         .withAutomaticReconnect().configureLogging(LogLevel.Error).build();
       const snapshot = async () => {
         const value = await connection.invoke<VipSnapshot>('Snapshot');

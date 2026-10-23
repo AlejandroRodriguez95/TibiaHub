@@ -5,7 +5,7 @@ import { provideRouter } from '@angular/router';
 import { Admin } from './admin';
 
 describe('Admin panel', () => {
-  const url = 'http://localhost:5267/admin/users';
+  const url = '/api/admin/users';
   beforeEach(() => TestBed.configureTestingModule({
     providers: [provideHttpClient(), provideHttpClientTesting(), provideRouter([])],
   }));

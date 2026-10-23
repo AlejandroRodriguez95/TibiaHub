@@ -48,3 +48,49 @@ The independent `world-list` job owns the reusable world directory. `WorldListSe
 HTTP 429/5xx responses get at most two retries. Both delta-seconds and HTTP-date `Retry-After` headers set a shared per-host cooldown with no 60-second cap. HTTP-date delays use the response's `Date` header when present to tolerate clock skew. Cooldowns are recorded even on the final failed attempt and remain active when a caller cancels, so another job cannot bypass them. Responses without a retry header use exponential backoff in addition to minimum request spacing. Long waits remain cancellable and happen outside the per-request HTTP timeout. Automatic redirects are disabled on refresh clients so hidden redirected requests cannot bypass pacing.
 
 The limiter and cooldown state live in memory in one process. Run one active refresher per public IP; this does not coordinate separate processes, unrelated applications sharing the IP, or restarts. A multi-replica deployment requires a distributed limiter and job lease before enabling refresh on multiple replicas. This is pacing and backoff enforcement for the known upstream limits, not automatic discovery of future quota changes.
+
+## Production persistence (Debian)
+
+`appsettings.Production.json` stores snapshots at `/var/lib/tibiaintel/refresh`,
+outside the published application directory. Development continues to use
+`App_Data/refresh`. The existing snapshot store supports absolute paths and creates
+its directory on the first write. The application service account must be able to
+write to the production directory.
+
+For a directly hosted service, create the directory before starting the app
+(replace `tibiaintel` with the actual service user/group):
+
+```sh
+sudo install -d -o tibiaintel -g tibiaintel -m 0750 /var/lib/tibiaintel/refresh
+```
+
+Keep that directory when replacing application releases. To seed existing caches,
+stop the application and copy the contents of the previous `App_Data/refresh`
+directory into it, preserving ownership for the service account. Copying is
+optional: a fresh installation recollects missing snapshots.
+
+When the backend container is added, mount a named volume at the same path:
+
+```yaml
+services:
+  api:
+    # Add alongside the backend image and its remaining configuration.
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    volumes:
+      - tibiaintel_refresh_data:/var/lib/tibiaintel/refresh
+
+volumes:
+  tibiaintel_refresh_data:
+```
+
+This is a mount fragment, not a runnable deployment configuration. The current
+Compose stack only runs PostgreSQL. The backend image must grant its runtime user
+write access to this mount. Keep the volume across image replacement; do not use
+`docker compose down -v` on the production stack. A volume survives container
+replacement but is not an off-server backup.
+
+To verify deployment persistence, let collection create snapshots, replace the
+application release/container while keeping the directory/volume, and confirm the
+same snapshot timestamps are loaded. For containers, configure the mount before
+first startup; the image's filesystem alone is not persistent storage.

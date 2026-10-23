@@ -261,17 +261,17 @@ public sealed class CharacterScanTests(RegistrationFixture fixture) : IClassFixt
     public async Task ScanEndpointsRequireLoginAndUseOnlyRecordedHistory()
     {
         using var client = await fixture.CreateAccountClientAsync();
-        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/tools/character-scan?name=Bob")).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/tools/character-scan?name=Bob")).StatusCode);
         var credentials = new { email = "scanner@example.com", password = "ValidPassword123!" };
-        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/account/register", credentials)).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/account/login", credentials)).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/account/register", credentials)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsJsonAsync("/api/account/login", credentials)).StatusCode);
         await Observe(0, ["Bob"]);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/tools/character-scan?name=Unknown")).StatusCode);
-        var result = await client.GetFromJsonAsync<JsonElement>("/tools/character-scan?name=Bob");
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/tools/character-scan?name=Unknown")).StatusCode);
+        var result = await client.GetFromJsonAsync<JsonElement>("/api/tools/character-scan?name=Bob");
         Assert.Equal(0, result.GetProperty("usableLogouts").GetInt32());
         Assert.Equal("Antica", result.GetProperty("world").GetString());
         await Observe(60, ["Bob"], world: "Secura");
-        var transferred = await client.GetFromJsonAsync<JsonElement>("/tools/character-scan?name=bob");
+        var transferred = await client.GetFromJsonAsync<JsonElement>("/api/tools/character-scan?name=bob");
         Assert.Equal("Secura", transferred.GetProperty("world").GetString());
     }
 }

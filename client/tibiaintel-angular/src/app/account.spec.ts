@@ -6,7 +6,7 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { routes } from './app.routes';
 
 describe('Account pages', () => {
-  const url = 'http://localhost:5267/account';
+  const url = '/api/account';
   let http: HttpTestingController;
   let harness: RouterTestingHarness;
 

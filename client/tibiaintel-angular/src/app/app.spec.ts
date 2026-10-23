@@ -60,7 +60,7 @@ describe('App navigation', () => {
     harness.routeNativeElement!.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
     await harness.fixture.whenStable();
     const http = TestBed.inject(HttpTestingController);
-    http.expectOne('http://localhost:5267/character/Bubble').flush({ character: { character: { name: 'Bubble', level: 250, world: 'Antica' } } });
+    http.expectOne('/api/character/Bubble').flush({ character: { character: { name: 'Bubble', level: 250, world: 'Antica' } } });
     harness.detectChanges();
     expect(harness.routeNativeElement!.querySelector('.character-result')?.textContent).toContain('Bubble');
     expect(harness.routeNativeElement!.querySelector<HTMLInputElement>('#character-name')!.value).toBe('Bubble');

@@ -1,0 +1,13 @@
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/.angular
+**/App_Data
+.git
+.idea
+.awb
+.artifacts
+.env
+.env.*
+**/*.user

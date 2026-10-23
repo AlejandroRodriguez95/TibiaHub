@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using TibiaIntel.Data;
+
 namespace TibiaIntel.Commands;
 
 public static class CommandHandler
@@ -10,6 +13,12 @@ public static class CommandHandler
 
         switch (args[0])
         {
+            case "--migrate-db":
+                using (var scope = services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<ApplicationDbContext>().Database.MigrateAsync();
+                }
+                return true;
             case "--grant-admin":
                 using (var scope = services.CreateScope())
                 {

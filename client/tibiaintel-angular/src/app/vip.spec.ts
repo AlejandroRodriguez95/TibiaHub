@@ -6,7 +6,7 @@ import { Subject } from 'rxjs';
 import { Vip } from './vip';
 import { VipEvent, VipLive, VipSnapshot, VipState, groupStatus } from './vip-live';
 
-const api = 'http://localhost:5267/tools/vip';
+const api = '/api/tools/vip';
 const base: VipSnapshot = { capturedAt: '2026-10-23T10:00:00Z', maxCharacters: 1000, maxGroups: 100,
   groups: [{ id: 10, name: 'Alejandro' }, { id: 20, name: 'Friends' }],
   characters: [{ id: 1, name: 'Lazy Snorlax', world: 'Antica', groupIds: [10, 20], status: 'online', lastObservedAt: null },
@@ -64,7 +64,7 @@ describe('VIP list', () => {
     input.value = 'Bob'; input.dispatchEvent(new Event('input'));
     fixture.detectChanges(); await fixture.whenStable();
     element.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-    http.expectOne('http://localhost:5267/account/csrf').flush({ token: 'fresh' });
+    http.expectOne('/api/account/csrf').flush({ token: 'fresh' });
     const write = http.expectOne(api + '/characters');
     expect(write.request.headers.get('X-CSRF-TOKEN')).toBe('fresh');
     expect(write.request.withCredentials).toBe(true); expect(write.request.body).toEqual({ name: 'Bob' });

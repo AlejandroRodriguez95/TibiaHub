@@ -24,7 +24,7 @@ public sealed class RegistrationFixture : WebApplicationFactory<Program>, IAsync
 
     public static async Task RefreshCsrfAsync(HttpClient client)
     {
-        var body = await client.GetFromJsonAsync<JsonElement>("/account/csrf");
+        var body = await client.GetFromJsonAsync<JsonElement>("/api/account/csrf");
         client.DefaultRequestHeaders.Remove("X-CSRF-TOKEN");
         client.DefaultRequestHeaders.Add("X-CSRF-TOKEN", body.GetProperty("token").GetString());
     }
